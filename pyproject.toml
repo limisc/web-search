@@ -1,0 +1,40 @@
+[project]
+name = "mcp-search"
+version = "0.1.0"
+description = "MCP search server with Tavily-backed web search and extraction tools"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+  "fastmcp>=2.14.0",
+  "httpx>=0.28.1",
+  "pydantic>=2.11.0",
+  "pydantic-settings>=2.8.0",
+  "starlette>=0.47.0",
+  "uvicorn>=0.34.0"
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3.5",
+  "pytest-asyncio>=0.26.0",
+  "respx>=0.22.0",
+  "ruff>=0.11.0"
+]
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]

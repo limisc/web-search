@@ -1,0 +1,20 @@
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    tavily_api_key: str | None = Field(default=None, alias="TAVILY_API_KEY")
+    tavily_base_url: str = Field(default="https://api.tavily.com", alias="TAVILY_BASE_URL")
+    request_timeout_seconds: float = Field(default=20.0, alias="REQUEST_TIMEOUT_SECONDS")
+    retry_max_attempts: int = Field(default=2, alias="RETRY_MAX_ATTEMPTS")
+    log_level: str = Field(default="INFO", alias="LOG_LEVEL")
+    mcp_host: str = Field(default="127.0.0.1", alias="MCP_HOST")
+    mcp_port: int = Field(default=8000, alias="MCP_PORT")
+    mcp_path: str = Field(default="/mcp", alias="MCP_PATH")
+    fastmcp_stateless_http: bool = Field(default=True, alias="FASTMCP_STATELESS_HTTP")
+
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+
+
+def get_settings() -> Settings:
+    return Settings()
