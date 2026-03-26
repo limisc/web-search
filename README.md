@@ -143,6 +143,7 @@ Inputs:
 - `search_depth`
 - `include_answer`
 - `include_raw_content`
+- `debug`
 
 ### `web_extract`
 Inputs:
@@ -152,6 +153,17 @@ Inputs:
 - `query`
 - `max_chunks`
 - `format`
+- `debug`
+
+## Security notes
+- Do **not** expose this MCP server directly to the public internet without authentication.
+- Prefer binding host ports to `127.0.0.1` and placing a controlled reverse proxy in front of it.
+- Keep provider API keys server-side only.
+- Reverse proxy / TLS / external ingress should be managed in your Ansible repo, not here.
+
+## Transport support
+- `stdio`: supported and recommended for local tool-style usage
+- `http`: supported and recommended for VPS / remote deployment
 
 ## Project structure
 ```text
@@ -169,4 +181,3 @@ src/mcp_search/
 ## Notes
 - Current scaffold is intentionally Tavily-only.
 - Future providers can be added under `src/mcp_search/providers/`.
-- Reverse proxy / TLS / external ingress should be managed in your Ansible repo, not here.

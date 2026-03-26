@@ -2,12 +2,10 @@ from __future__ import annotations
 
 from mcp_search.models.requests import ExtractRequest
 from mcp_search.models.responses import ExtractResponse
-from mcp_search.providers.tavily import TavilyProvider
+from mcp_search.providers import get_provider
 
 
 class ExtractService:
-    def __init__(self) -> None:
-        self.provider = TavilyProvider()
-
     async def run(self, request: ExtractRequest) -> ExtractResponse:
-        return await self.provider.extract(request)
+        provider = get_provider(request.provider)
+        return await provider.extract(request)

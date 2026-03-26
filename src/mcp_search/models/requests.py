@@ -16,6 +16,7 @@ class SearchRequest(BaseModel):
     search_depth: Literal["basic", "advanced"] = "basic"
     include_answer: bool = True
     include_raw_content: bool = False
+    debug: bool = False
 
 
 class ExtractRequest(BaseModel):
@@ -25,3 +26,4 @@ class ExtractRequest(BaseModel):
     query: str | None = None
     max_chunks: int | None = Field(default=None, ge=1, le=5)
     format: Literal["markdown", "text"] = "markdown"
+    debug: bool = False

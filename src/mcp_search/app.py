@@ -10,7 +10,7 @@ from mcp_search.tools import register_tools
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Run the MCP search server")
-    parser.add_argument("--transport", choices=["stdio", "http", "sse"], default="stdio")
+    parser.add_argument("--transport", choices=["stdio", "http"], default="stdio")
     parser.add_argument("--host", default=None)
     parser.add_argument("--port", type=int, default=None)
     parser.add_argument("--path", default=None)

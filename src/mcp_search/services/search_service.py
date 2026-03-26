@@ -2,12 +2,10 @@ from __future__ import annotations
 
 from mcp_search.models.requests import SearchRequest
 from mcp_search.models.responses import SearchResponse
-from mcp_search.providers.tavily import TavilyProvider
+from mcp_search.providers import get_provider
 
 
 class SearchService:
-    def __init__(self) -> None:
-        self.provider = TavilyProvider()
-
     async def run(self, request: SearchRequest) -> SearchResponse:
-        return await self.provider.search(request)
+        provider = get_provider(request.provider)
+        return await provider.search(request)
