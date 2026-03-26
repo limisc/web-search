@@ -10,6 +10,7 @@ Minimal MCP search server scaffold for VPS deployment.
 - Remote `http` mode for VPS deployment
 - `/healthz` endpoint
 - `uv`-first local workflow
+- Docker Compose deployment for VPS / Ansible handoff
 
 ## Requirements
 - Python 3.12+
@@ -62,12 +63,71 @@ make setup
 make lint
 make test
 make run-http
+make run-stdio
+make stop-local
 ```
 
-## Docker
+## Docker Compose
+
+### Local / VPS application-only deployment
 ```bash
-docker compose up --build
+cp .env.example .env
+# edit .env
+
+docker compose up -d --build
 ```
+
+Check health:
+```bash
+curl http://127.0.0.1:8000/healthz
+```
+
+Follow logs:
+```bash
+docker compose logs -f
+```
+
+Stop:
+```bash
+docker compose down
+```
+
+### Compose-controlled variables
+The compose setup is intentionally configurable via `.env` so your Ansible repo can template it.
+
+Important variables:
+- `TAVILY_API_KEY`
+- `TAVILY_BASE_URL`
+- `REQUEST_TIMEOUT_SECONDS`
+- `RETRY_MAX_ATTEMPTS`
+- `LOG_LEVEL`
+- `MCP_HOST`
+- `MCP_PORT`
+- `MCP_PATH`
+- `FASTMCP_STATELESS_HTTP`
+- `HOST_BIND`
+- `HOST_PORT`
+
+Example defaults:
+```env
+MCP_HOST=0.0.0.0
+MCP_PORT=8000
+MCP_PATH=/mcp
+HOST_BIND=127.0.0.1
+HOST_PORT=8000
+```
+
+### Notes for Ansible integration
+This repo is intentionally responsible only for the **web-search MCP application** itself.
+Recommended split:
+- **This repo**: app code, Dockerfile, docker-compose.yml, env contract, healthcheck
+- **Ansible repo**: Docker installation, server setup, `.env` templating, reverse proxy, TLS, firewall, service rollout
+
+Current compose is designed so Ansible can control both:
+- application runtime settings
+- host port binding
+
+without editing compose YAML itself.
 
 ## Tool overview
 
@@ -109,4 +169,4 @@ src/mcp_search/
 ## Notes
 - Current scaffold is intentionally Tavily-only.
 - Future providers can be added under `src/mcp_search/providers/`.
-- For production, put this behind Caddy or Nginx and prefer private access or authenticated HTTPS.
+- Reverse proxy / TLS / external ingress should be managed in your Ansible repo, not here.
