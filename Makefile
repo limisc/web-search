@@ -16,13 +16,13 @@ test:
 	$(UV) run pytest
 
 run-http:
-	$(UV) run python -m mcp_search.app --transport http --host $(HOST) --port $(PORT) --path $(PATH_MCP)
+	$(UV) run python -m web_search.app --transport http --host $(HOST) --port $(PORT) --path $(PATH_MCP)
 
 run-stdio:
-	$(UV) run python -m mcp_search.app --transport stdio
+	$(UV) run python -m web_search.app --transport stdio
 
 stop-local:
-	@pids=$$(pgrep -f "python -m mcp_search.app --transport http" || true); \
+	@pids=$$(pgrep -f "python -m web_search.app --transport http" || true); \
 	if [ -z "$$pids" ]; then \
 		echo "No local MCP HTTP server process found."; \
 	else \

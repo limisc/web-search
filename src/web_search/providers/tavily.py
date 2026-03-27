@@ -7,10 +7,10 @@ from typing import Any
 
 import httpx
 
-from mcp_search.config import get_settings
-from mcp_search.logging import get_logger
-from mcp_search.models.requests import ExtractRequest, SearchRequest
-from mcp_search.models.responses import (
+from web_search.config import get_settings
+from web_search.logging import get_logger
+from web_search.models.requests import ExtractRequest, SearchRequest
+from web_search.models.responses import (
     Citation,
     ExtractResponse,
     ExtractedPage,
@@ -18,7 +18,7 @@ from mcp_search.models.responses import (
     SearchHit,
     SearchResponse,
 )
-from mcp_search.utils.errors import ProviderError
+from web_search.utils.errors import ProviderError
 
 
 class TavilyProvider:
@@ -138,6 +138,13 @@ class TavilyProvider:
             try:
                 response = await self._client.post(f"{base_url}{path}", json=body, headers=headers)
                 response.raise_for_status()
+                self.logger.info(
+                    "provider_request_succeeded provider=%s path=%s status_code=%s attempt=%s",
+                    self.name,
+                    path,
+                    response.status_code,
+                    attempt,
+                )
                 return response.json()
             except httpx.TimeoutException as exc:
                 last_error = exc
@@ -172,6 +179,14 @@ class TavilyProvider:
             if attempt < self.settings.retry_max_attempts:
                 await asyncio.sleep(0.25 * attempt)
 
+        self.logger.error(
+            "provider_request_failed provider=%s path=%s error_type=%s attempts=%s error=%s",
+            self.name,
+            path,
+            last_error_type,
+            self.settings.retry_max_attempts,
+            last_error,
+        )
         raise ProviderError(
             f"Tavily request failed: {last_error}",
             provider=self.name,
@@ -181,6 +196,7 @@ class TavilyProvider:
 
     def _ensure_configured(self) -> None:
         if not self.settings.tavily_api_key:
+            self.logger.error("provider_not_configured provider=%s missing_env=TAVILY_API_KEY", self.name)
             raise ProviderError(
                 "TAVILY_API_KEY is not configured",
                 provider=self.name,

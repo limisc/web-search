@@ -1,6 +1,6 @@
-# MCP Search Repo Plan
+# Web Search Repo Plan
 
-> 目标：在你的 VPS 上部署一个**私有的、可远程访问的 MCP Search Server**，先从 **Tavily** 开始，后续可扩展到 **Exa / Brave / Grok / Jina / 其他搜索与抽取服务**，并最终支持多 provider fan-out、交叉验证、去重、归一化与答案综合。
+> 目标：在你的 VPS 上部署一个**私有的、可远程访问的 web-search service**，先从 **Tavily** 开始，后续可扩展到 **Exa / Brave / Grok / Jina / 其他搜索与抽取服务**，并最终支持多 provider fan-out、交叉验证、去重、归一化与答案综合。
 
 ---
 
@@ -52,7 +52,7 @@ MCP 里有三个角色：
 - **Server**：提供工具、资源、提示词能力的服务
 
 你的项目是：
-- **一个 MCP Server**
+- **一个 MCP server**
 - 专门暴露“搜索与网页信息抽取”的能力
 
 ### 1.2 这个搜索服务最适合先做成 Tools，而不是 Resources / Prompts
@@ -204,7 +204,7 @@ OAuth / 标准 MCP auth 可以放到后续版本。
 V0.1 只做下面这些：
 
 ### 必做
-- 一个可运行的 MCP server
+- 一个可运行的 Web Search MCP server
 - 支持 **Tavily Search**
 - 支持 **Tavily Extract**
 - 暴露统一工具：
@@ -375,7 +375,7 @@ MCP Host / Client
       |
       v
 +----------------------+
-|   MCP Search Server  |
+|   web-search service  |
 |  (FastMCP / Python)  |
 +----------------------+
       |
@@ -504,7 +504,7 @@ MCP Host / Client
 ## 8. 推荐仓库结构
 
 ```text
-mcp-search/
+web-search/
   README.md
   pyproject.toml
   uv.lock
@@ -512,7 +512,7 @@ mcp-search/
   Dockerfile
   docker-compose.yml
   src/
-    mcp_search/
+    web_search/
       __init__.py
       app.py
       config.py
@@ -937,14 +937,14 @@ MVP 可以非常轻量。
 最小可交付可以只写这些：
 
 ```text
-src/mcp_search/app.py
-src/mcp_search/config.py
-src/mcp_search/tools/web_search.py
-src/mcp_search/tools/web_extract.py
-src/mcp_search/providers/base.py
-src/mcp_search/providers/tavily.py
-src/mcp_search/models/requests.py
-src/mcp_search/models/responses.py
+src/web_search/app.py
+src/web_search/config.py
+src/web_search/tools/web_search.py
+src/web_search/tools/web_extract.py
+src/web_search/providers/base.py
+src/web_search/providers/tavily.py
+src/web_search/models/requests.py
+src/web_search/models/responses.py
 tests/test_tavily_adapter.py
 README.md
 Dockerfile
@@ -957,7 +957,7 @@ Dockerfile
 
 ### 方案定稿建议
 
-- **新开 repo**：`mcp-search`
+- **新开 repo**：`web-search`
 - **语言**：Python
 - **框架**：FastMCP
 - **provider**：先只做 Tavily
@@ -1009,7 +1009,7 @@ Dockerfile
 - FastMCP Running Your Server: https://gofastmcp.com/deployment/running-server
 - Azure remote MCP auth sample: https://github.com/Azure-Samples/remote-mcp-webapp-python-auth
 - AWS deployment guidance: https://github.com/aws-solutions-library-samples/guidance-for-deploying-model-context-protocol-servers-on-aws
-- Awesome MCP Servers: https://github.com/punkpeye/awesome-mcp-servers
+- Awesome MCP servers: https://github.com/punkpeye/awesome-mcp-servers
 
 ### Tavily
 - 通过当前 skill 脚本与官方 API 路线可先落地 Search / Extract，两者已经足够支持 MVP。
@@ -1035,10 +1035,10 @@ Dockerfile
 ### 选项 A：直接生成 repo 骨架
 我会在当前目录下生成：
 - `pyproject.toml`
-- `src/mcp_search/...`
+- `src/web_search/...`
 - `Dockerfile`
 - `.env.example`
-- 最小可运行 Tavily MCP server
+- 最小可运行 Tavily Web Search MCP server
 
 ### 选项 B：先把协议 / schema 定死
 我先给你写：

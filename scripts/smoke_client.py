@@ -14,7 +14,7 @@ async def running_server(port: int = 8011) -> AsyncIterator[None]:
         "run",
         "python",
         "-m",
-        "mcp_search.app",
+        "web_search.app",
         "--transport",
         "http",
         "--host",

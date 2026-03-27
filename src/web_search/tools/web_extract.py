@@ -3,10 +3,10 @@ from __future__ import annotations
 from fastmcp.exceptions import ToolError, ValidationError as MCPValidationError
 from pydantic import ValidationError
 
-from mcp_search.models.requests import ExtractRequest
-from mcp_search.server import mcp
-from mcp_search.services.extract_service import ExtractService
-from mcp_search.utils.errors import ProviderError
+from web_search.models.requests import ExtractRequest
+from web_search.server import mcp
+from web_search.services.extract_service import ExtractService
+from web_search.utils.errors import ProviderError
 
 
 @mcp.tool

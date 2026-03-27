@@ -1,5 +1,7 @@
 services:
-  mcp-search:
+  web-search:
+    container_name: web-search
+    image: web-search
     build:
       context: .
       dockerfile: Dockerfile

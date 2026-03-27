@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import argparse
 
-from mcp_search.config import get_settings
-from mcp_search.logging import configure_logging
-from mcp_search.server import mcp
-from mcp_search.tools import register_tools
+from web_search.config import get_settings
+from web_search.logging import configure_logging
+from web_search.server import mcp
+from web_search.tools import register_tools
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Run the MCP search server")
+    parser = argparse.ArgumentParser(description="Run the web-search MCP server")
     parser.add_argument("--transport", choices=["stdio", "http"], default="stdio")
     parser.add_argument("--host", default=None)
     parser.add_argument("--port", type=int, default=None)

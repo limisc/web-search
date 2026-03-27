@@ -4,8 +4,8 @@ import importlib
 
 
 REGISTER_MODULES = (
-    "mcp_search.tools.web_search",
-    "mcp_search.tools.web_extract",
+    "web_search.tools.web_search",
+    "web_search.tools.web_extract",
 )
 
 

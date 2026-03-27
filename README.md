@@ -1,11 +1,13 @@
-# mcp-search
+# web-search
 
-Minimal MCP search server scaffold for VPS deployment.
+Minimal web-search MCP server for VPS deployment.
+
+For VPS deployment via your Ansible infra repo, see that repo's `docs/web-search.md`.
 
 ## Features
 - `web_search` tool backed by Tavily Search
 - `web_extract` tool backed by Tavily Extract
-- FastMCP server
+- FastMCP-based server
 - Local `stdio` mode for development
 - Remote `http` mode for VPS deployment
 - `/healthz` endpoint
@@ -34,12 +36,12 @@ uv sync --extra dev
 
 ### 3. Run locally with stdio
 ```bash
-uv run python -m mcp_search.app --transport stdio
+uv run python -m web_search.app --transport stdio
 ```
 
 ### 4. Run locally over HTTP
 ```bash
-uv run python -m mcp_search.app --transport http --host 127.0.0.1 --port 8000 --path /mcp
+uv run python -m web_search.app --transport http --host 127.0.0.1 --port 8000 --path /mcp
 ```
 
 Health check:
@@ -117,8 +119,13 @@ HOST_BIND=127.0.0.1
 HOST_PORT=8000
 ```
 
+Expected Docker naming:
+- service: `web-search`
+- container: `web-search`
+- image: `web-search`
+
 ### Notes for Ansible integration
-This repo is intentionally responsible only for the **web-search MCP application** itself.
+This repo is intentionally responsible only for the **web-search app** itself.
 Recommended split:
 - **This repo**: app code, Dockerfile, docker-compose.yml, env contract, healthcheck
 - **Ansible repo**: Docker installation, server setup, `.env` templating, reverse proxy, TLS, firewall, service rollout
@@ -156,7 +163,7 @@ Inputs:
 - `debug`
 
 ## Security notes
-- Do **not** expose this MCP server directly to the public internet without authentication.
+- Do **not** expose this web-search MCP service directly to the public internet without authentication.
 - Prefer binding host ports to `127.0.0.1` and placing a controlled reverse proxy in front of it.
 - Keep provider API keys server-side only.
 - Reverse proxy / TLS / external ingress should be managed in your Ansible repo, not here.
@@ -167,7 +174,7 @@ Inputs:
 
 ## Project structure
 ```text
-src/mcp_search/
+src/web_search/
   app.py
   config.py
   server.py
@@ -180,4 +187,4 @@ src/mcp_search/
 
 ## Notes
 - Current scaffold is intentionally Tavily-only.
-- Future providers can be added under `src/mcp_search/providers/`.
+- Future providers can be added under `src/web_search/providers/`.

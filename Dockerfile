@@ -12,4 +12,4 @@ RUN pip install --no-cache-dir .
 
 EXPOSE 8000
 
-CMD ["python", "-m", "mcp_search.app", "--transport", "http"]
+CMD ["python", "-m", "web_search.app", "--transport", "http"]

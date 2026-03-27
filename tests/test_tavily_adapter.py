@@ -4,11 +4,11 @@ import pytest
 import respx
 from httpx import ConnectError, Request, Response
 
-from mcp_search.config import clear_settings_cache
-from mcp_search.models.requests import SearchRequest
-from mcp_search.providers import clear_provider_cache
-from mcp_search.providers.tavily import TavilyProvider
-from mcp_search.utils.errors import ProviderError
+from web_search.config import clear_settings_cache
+from web_search.models.requests import SearchRequest
+from web_search.providers import clear_provider_cache
+from web_search.providers.tavily import TavilyProvider
+from web_search.utils.errors import ProviderError
 
 
 @pytest.fixture(autouse=True)

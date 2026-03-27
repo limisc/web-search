@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from functools import lru_cache
 
-from mcp_search.providers.base import SearchProvider
-from mcp_search.providers.tavily import TavilyProvider
-from mcp_search.utils.errors import ProviderError
+from web_search.providers.base import SearchProvider
+from web_search.providers.tavily import TavilyProvider
+from web_search.utils.errors import ProviderError
 
 _PROVIDER_FACTORIES = {
     "tavily": TavilyProvider,

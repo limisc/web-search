@@ -5,10 +5,10 @@ import respx
 from fastmcp.exceptions import ToolError, ValidationError as MCPValidationError
 from httpx import ConnectError, Request, Response
 
-from mcp_search.config import clear_settings_cache
-from mcp_search.providers import clear_provider_cache
-from mcp_search.tools.web_extract import web_extract
-from mcp_search.tools.web_search import web_search
+from web_search.config import clear_settings_cache
+from web_search.providers import clear_provider_cache
+from web_search.tools.web_extract import web_extract
+from web_search.tools.web_search import web_search
 
 
 @pytest.fixture(autouse=True)
@@ -111,3 +111,26 @@ async def test_web_search_raises_connection_error(monkeypatch: pytest.MonkeyPatc
 
     with pytest.raises(ToolError):
         await web_search(query="hello", provider="tavily")
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_web_search_raises_provider_not_configured(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("TAVILY_API_KEY", raising=False)
+    monkeypatch.setenv("TAVILY_BASE_URL", "https://api.tavily.com")
+
+    with pytest.raises(ToolError):
+        await web_search(query="hello", provider="tavily")
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_web_extract_raises_provider_not_configured(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("TAVILY_API_KEY", raising=False)
+    monkeypatch.setenv("TAVILY_BASE_URL", "https://api.tavily.com")
+
+    with pytest.raises(ToolError):
+        await web_extract(
+            urls=["https://modelcontextprotocol.io/docs/getting-started/intro"],
+            provider="tavily",
+        )

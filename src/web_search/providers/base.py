@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from mcp_search.models.requests import ExtractRequest, SearchRequest
-from mcp_search.models.responses import ExtractResponse, SearchResponse
+from web_search.models.requests import ExtractRequest, SearchRequest
+from web_search.models.responses import ExtractResponse, SearchResponse
 
 
 class WebSearchProvider(Protocol):
