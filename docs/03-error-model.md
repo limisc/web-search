@@ -1,0 +1,110 @@
+# Error Model
+
+## Purpose
+
+This document defines the target error vocabulary and example response shapes for the repository.
+
+The goal is to make failures easier for both humans and AI agents to handle consistently.
+
+---
+
+## Stable error vocabulary
+
+The project should converge toward a small stable set of semantic error types:
+- `invalid_request`
+- `provider_not_supported`
+- `provider_not_implemented`
+- `provider_not_configured`
+- `provider_timeout`
+- `provider_unavailable`
+- `budget_exceeded`
+- `partial_results`
+
+Some of these already exist in code. The full HTTP + MCP normalization layer is not finished yet.
+
+---
+
+## Target HTTP error shape
+
+```json
+{
+  "error": {
+    "type": "provider_timeout",
+    "message": "Upstream provider request timed out",
+    "provider": "tavily"
+  }
+}
+```
+
+### Fields
+- `error.type`: stable semantic error name
+- `error.message`: human-readable explanation
+- `error.provider`: optional provider identifier when relevant
+
+---
+
+## Example errors
+
+### Validation-style error
+```json
+{
+  "error": {
+    "type": "invalid_request",
+    "message": "Field 'intent' must be one of: docs, fresh, general, social"
+  }
+}
+```
+
+### Provider timeout
+```json
+{
+  "error": {
+    "type": "provider_timeout",
+    "message": "Upstream provider request timed out",
+    "provider": "tavily"
+  }
+}
+```
+
+### Provider not implemented
+```json
+{
+  "error": {
+    "type": "provider_not_implemented",
+    "message": "Provider not implemented yet: exa",
+    "provider": "exa"
+  }
+}
+```
+
+### Future partial-results shape
+```json
+{
+  "error": {
+    "type": "partial_results",
+    "message": "One or more providers failed; returning partial results"
+  },
+  "meta": {
+    "providers_used": ["tavily", "brave"]
+  }
+}
+```
+
+---
+
+## MCP mapping
+
+Target behavior:
+- MCP should preserve the same semantic error types
+- MCP transport may wrap them differently, but the meaning should remain aligned with the HTTP error vocabulary
+- future partial-success behavior should not be hidden as a full success or a full failure
+
+---
+
+## Relationship to other docs
+
+Read next:
+- `docs/01-public-api.md`
+- `docs/04-operations.md`
+- `docs/06-development-workflow.md`
+- `README.md`

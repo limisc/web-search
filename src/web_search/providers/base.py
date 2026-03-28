@@ -7,10 +7,14 @@ from web_search.models.responses import ExtractResponse, SearchResponse
 
 
 class WebSearchProvider(Protocol):
+    name: str
+
     async def search(self, request: SearchRequest) -> SearchResponse: ...
 
 
 class WebExtractProvider(Protocol):
+    name: str
+
     async def extract(self, request: ExtractRequest) -> ExtractResponse: ...
 
 

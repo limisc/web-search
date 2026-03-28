@@ -9,10 +9,17 @@ from web_search.utils.errors import ProviderError
 _PROVIDER_FACTORIES = {
     "tavily": TavilyProvider,
 }
+_OPTIONAL_PROVIDER_NAMES = {"exa", "brave", "firecrawl", "grok"}
 
 
 @lru_cache(maxsize=None)
 def get_provider(name: str) -> SearchProvider:
+    if name in _OPTIONAL_PROVIDER_NAMES:
+        raise ProviderError(
+            f"Provider not implemented yet: {name}",
+            provider=name,
+            error_type="provider_not_implemented",
+        )
     try:
         provider_factory = _PROVIDER_FACTORIES[name]
     except KeyError as exc:
@@ -22,6 +29,10 @@ def get_provider(name: str) -> SearchProvider:
             error_type="provider_not_supported",
         ) from exc
     return provider_factory()
+
+
+def is_provider_available(name: str) -> bool:
+    return name in _PROVIDER_FACTORIES
 
 
 def clear_provider_cache() -> None:

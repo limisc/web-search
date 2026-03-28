@@ -1,23 +1,64 @@
 # web-search
 
-Minimal web-search MCP server for VPS deployment.
+A provider-agnostic **Web Intelligence Layer** for agents and automation.
 
-For VPS deployment via your Ansible infra repo, see that repo's `docs/web-search.md`.
+This repository exists to solve two core information problems:
+- **fresh information**
+- **authoritative information**
 
-## Features
-- `web_search` tool backed by Tavily Search
-- `web_extract` tool backed by Tavily Extract
-- FastMCP-based server
-- Local `stdio` mode for development
-- Remote `http` mode for VPS deployment
-- `/healthz` endpoint
-- `uv`-first local workflow
-- Docker Compose deployment for VPS / Ansible handoff
+It aims to expose stable capabilities such as source discovery and extraction without tightly coupling callers to specific provider brands.
 
-## Requirements
-- Python 3.12+
-- `uv`
-- Tavily API key
+---
+
+## Current public surface
+
+### HTTP APIs
+- `POST /api/web_search`
+- `POST /api/web_extract`
+
+### MCP tools
+- `web_search`
+- `web_extract`
+
+### Not currently public
+- monitoring / scheduled watch workflows
+- alerting / diff workflows
+- dedicated verification API
+
+---
+
+## Current implementation reality
+
+Implemented today:
+- Tavily-backed search
+- Tavily-backed extract
+- thin MCP facade
+- HTTP APIs
+- router / planner skeleton
+- query cache
+
+Not implemented yet:
+- Exa / Brave / Firecrawl / Grok adapters
+- true multi-provider fan-out
+- true verification / agreement scoring
+- structured extraction execution
+- monitoring pipeline / scheduler integration / alerts
+
+So the repository is currently **orchestrator-shaped**, but still **Tavily-backed in practice**.
+
+---
+
+## Why this project exists
+
+In short:
+- providers are not interchangeable
+- providers change over time
+- upper layers should ask for information capabilities, not vendor brands
+
+Read the full purpose doc here:
+- `docs/00-project-purpose.md`
+
+---
 
 ## Quick start
 
@@ -44,147 +85,97 @@ uv run python -m web_search.app --transport stdio
 uv run python -m web_search.app --transport http --host 127.0.0.1 --port 8000 --path /mcp
 ```
 
-Health check:
+### 5. Health check
 ```bash
 curl http://127.0.0.1:8000/healthz
 ```
 
-### 5. Run tests
+### 6. Run tests
 ```bash
-uv run pytest
+uv run pytest -q
 ```
 
-### 6. Run lint
+### 7. Run lint
 ```bash
 uv run ruff check .
 ```
 
-### 7. Makefile shortcuts
-```bash
-make setup
-make lint
-make test
-make run-http
-make run-stdio
-make stop-local
-```
+---
 
-## Docker Compose
+## Documentation map
 
-### Local / VPS application-only deployment
-```bash
-cp .env.example .env
-# edit .env
+Recommended reading order for future humans and AI agents:
 
-docker compose up -d --build
-```
+1. `README.md`
+   - quick understanding of purpose, public surface, and current reality
+2. `docs/00-project-purpose.md`
+   - architectural intent / north star
+3. `docs/01-public-api.md`
+   - stable contract surface
+4. `docs/02-capability-model.md`
+   - routing semantics independent of provider brands
+5. `docs/03-error-model.md`
+   - target failure semantics and examples
+6. `docs/04-operations.md`
+   - security / observability / deployment expectations
+7. `docs/05-roadmap.md`
+   - phase plan and execution status
+8. `docs/06-development-workflow.md`
+   - how to modify the repo safely
+9. `docs/99-readme-structure-proposal.md`
+   - why the docs were split this way
 
-Check health:
-```bash
-curl http://127.0.0.1:8000/healthz
-```
+---
 
-Follow logs:
-```bash
-docker compose logs -f
-```
+## Documentation source of truth
 
-Stop:
-```bash
-docker compose down
-```
+Use the focused docs under `docs/` as the primary source of truth:
+- `docs/00-project-purpose.md`
+- `docs/01-public-api.md`
+- `docs/02-capability-model.md`
+- `docs/03-error-model.md`
+- `docs/04-operations.md`
+- `docs/05-roadmap.md`
+- `docs/06-development-workflow.md`
 
-### Compose-controlled variables
-The compose setup is intentionally configurable via `.env` so your Ansible repo can template it.
+`README.md` is the entrypoint and navigation page.
 
-Important variables:
-- `TAVILY_API_KEY`
-- `TAVILY_BASE_URL`
-- `REQUEST_TIMEOUT_SECONDS`
-- `RETRY_MAX_ATTEMPTS`
-- `LOG_LEVEL`
-- `MCP_HOST`
-- `MCP_PORT`
-- `MCP_PATH`
-- `FASTMCP_STATELESS_HTTP`
-- `HOST_BIND`
-- `HOST_PORT`
+---
 
-Example defaults:
-```env
-MCP_HOST=0.0.0.0
-MCP_PORT=8000
-MCP_PATH=/mcp
-HOST_BIND=127.0.0.1
-HOST_PORT=8000
-```
+## Project layout
 
-Expected Docker naming:
-- service: `web-search`
-- container: `web-search`
-- image: `web-search`
-
-### Notes for Ansible integration
-This repo is intentionally responsible only for the **web-search app** itself.
-Recommended split:
-- **This repo**: app code, Dockerfile, docker-compose.yml, env contract, healthcheck
-- **Ansible repo**: Docker installation, server setup, `.env` templating, reverse proxy, TLS, firewall, service rollout
-
-Current compose is designed so Ansible can control both:
-- application runtime settings
-- host port binding
-
-without editing compose YAML itself.
-
-## Tool overview
-
-### `web_search`
-Inputs:
-- `query`
-- `provider` (`tavily` only for now)
-- `max_results`
-- `topic`
-- `time_range`
-- `include_domains`
-- `exclude_domains`
-- `search_depth`
-- `include_answer`
-- `include_raw_content`
-- `debug`
-
-### `web_extract`
-Inputs:
-- `urls`
-- `provider` (`tavily` only for now)
-- `extract_depth`
-- `query`
-- `max_chunks`
-- `format`
-- `debug`
-
-## Security notes
-- Do **not** expose this web-search MCP service directly to the public internet without authentication.
-- Prefer binding host ports to `127.0.0.1` and placing a controlled reverse proxy in front of it.
-- Keep provider API keys server-side only.
-- Reverse proxy / TLS / external ingress should be managed in your Ansible repo, not here.
-
-## Transport support
-- `stdio`: supported and recommended for local tool-style usage
-- `http`: supported and recommended for VPS / remote deployment
-
-## Project structure
 ```text
 src/web_search/
   app.py
   config.py
+  logging.py
   server.py
   tools/
+    web_search.py
+    web_extract.py
   services/
+    search_service.py
+    extract_service.py
+    router.py
+    planner.py
   providers/
+    __init__.py
+    base.py
+    tavily.py
   models/
+    requests.py
+    responses.py
   utils/
-```
+    errors.py
+    cache.py
 
-## Notes
-- Current scaffold is intentionally Tavily-only.
-- Future providers can be added under `src/web_search/providers/`.
+docs/
+  00-project-purpose.md
+  01-public-api.md
+  02-capability-model.md
+  03-error-model.md
+  04-operations.md
+  05-roadmap.md
+  06-development-workflow.md
+  99-readme-structure-proposal.md
+```

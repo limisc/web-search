@@ -7,5 +7,6 @@ from web_search.providers import get_provider
 
 class ExtractService:
     async def run(self, request: ExtractRequest) -> ExtractResponse:
-        provider = get_provider(request.provider)
+        provider_name = request.provider or "tavily"
+        provider = get_provider(provider_name)
         return await provider.extract(request)

@@ -7,6 +7,7 @@ from httpx import ConnectError, Request, Response
 
 from web_search.config import clear_settings_cache
 from web_search.providers import clear_provider_cache
+from web_search.services.search_service import clear_search_cache
 from web_search.tools.web_extract import web_extract
 from web_search.tools.web_search import web_search
 
@@ -15,12 +16,13 @@ from web_search.tools.web_search import web_search
 def clear_caches() -> None:
     clear_settings_cache()
     clear_provider_cache()
+    clear_search_cache()
 
 
 @pytest.mark.asyncio
-async def test_web_search_returns_validation_error_for_unsupported_provider() -> None:
-    with pytest.raises(MCPValidationError):
-        await web_search(query="hello", provider="exa")
+async def test_web_search_returns_tool_error_for_unavailable_provider() -> None:
+    with pytest.raises(ToolError):
+        await web_search(query="hello", intent="docs", provider="unknown")
 
 
 @pytest.mark.asyncio
@@ -47,7 +49,6 @@ async def test_web_extract_returns_normalized_pages(monkeypatch: pytest.MonkeyPa
 
     result = await web_extract(
         urls=["https://modelcontextprotocol.io/docs/getting-started/intro"],
-        provider="tavily",
         format="text",
     )
 
@@ -55,12 +56,13 @@ async def test_web_extract_returns_normalized_pages(monkeypatch: pytest.MonkeyPa
     assert len(result["pages"]) == 1
     assert result["pages"][0]["title"] == "Model Context Protocol"
     assert result["pages"][0]["chunks"] == ["chunk-1", "chunk-2"]
+    assert result["mode"] == "content"
 
 
 @pytest.mark.asyncio
 async def test_web_extract_raises_validation_error_for_invalid_url() -> None:
     with pytest.raises(MCPValidationError):
-        await web_extract(urls=["not-a-url"], provider="tavily")
+        await web_extract(urls=["not-a-url"])
 
 
 @pytest.mark.asyncio
@@ -68,7 +70,6 @@ async def test_web_extract_raises_validation_error_for_invalid_max_chunks() -> N
     with pytest.raises(MCPValidationError):
         await web_extract(
             urls=["https://modelcontextprotocol.io/docs/getting-started/intro"],
-            provider="tavily",
             max_chunks=99,
         )
 
@@ -84,7 +85,6 @@ async def test_web_extract_raises_provider_http_error(monkeypatch: pytest.Monkey
     with pytest.raises(ToolError):
         await web_extract(
             urls=["https://modelcontextprotocol.io/docs/getting-started/intro"],
-            provider="tavily",
         )
 
 
@@ -97,7 +97,7 @@ async def test_web_search_raises_provider_http_error(monkeypatch: pytest.MonkeyP
     respx.post("https://api.tavily.com/search").mock(return_value=Response(401, json={"error": "unauthorized"}))
 
     with pytest.raises(ToolError):
-        await web_search(query="hello", provider="tavily")
+        await web_search(query="hello")
 
 
 @pytest.mark.asyncio
@@ -110,7 +110,7 @@ async def test_web_search_raises_connection_error(monkeypatch: pytest.MonkeyPatc
     route.mock(side_effect=ConnectError("boom", request=Request("POST", "https://api.tavily.com/search")))
 
     with pytest.raises(ToolError):
-        await web_search(query="hello", provider="tavily")
+        await web_search(query="hello")
 
 
 @pytest.mark.asyncio
@@ -120,7 +120,7 @@ async def test_web_search_raises_provider_not_configured(monkeypatch: pytest.Mon
     monkeypatch.setenv("TAVILY_BASE_URL", "https://api.tavily.com")
 
     with pytest.raises(ToolError):
-        await web_search(query="hello", provider="tavily")
+        await web_search(query="hello")
 
 
 @pytest.mark.asyncio
@@ -132,5 +132,4 @@ async def test_web_extract_raises_provider_not_configured(monkeypatch: pytest.Mo
     with pytest.raises(ToolError):
         await web_extract(
             urls=["https://modelcontextprotocol.io/docs/getting-started/intro"],
-            provider="tavily",
         )

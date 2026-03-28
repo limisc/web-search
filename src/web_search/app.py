@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import argparse
 
+import uvicorn
+
 from web_search.config import get_settings
 from web_search.logging import configure_logging
-from web_search.server import mcp
+from web_search.server import build_http_app, mcp
 from web_search.tools import register_tools
 
 
@@ -32,13 +34,8 @@ def main() -> None:
         mcp.run()
         return
 
-    mcp.run(
-        transport=transport,
-        host=host,
-        port=port,
-        path=path,
-        stateless_http=settings.fastmcp_stateless_http,
-    )
+    app = build_http_app(path=path, stateless_http=settings.fastmcp_stateless_http)
+    uvicorn.run(app, host=host, port=port)
 
 
 if __name__ == "__main__":

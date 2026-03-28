@@ -1,8 +1,10 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field, HttpUrl
+
+VerificationLevel = Literal["none", "light", "medium", "high"]
 
 
 class Citation(BaseModel):
@@ -20,6 +22,7 @@ class SearchHit(BaseModel):
     published_at: str | None = None
     source_type: str = "web"
     provider: str
+    extraction_fields: dict[str, Any] | None = None
     raw: dict[str, Any] | None = None
 
 
@@ -27,10 +30,14 @@ class ResponseMeta(BaseModel):
     latency_ms: int
     cached: bool = False
     provider_request_id: str | None = None
+    route: str | None = None
+    providers_used: list[str] = Field(default_factory=list)
+    verification_level: VerificationLevel = "none"
 
 
 class SearchResponse(BaseModel):
     query: str
+    intent: str
     provider: str
     answer: str | None = None
     results: list[SearchHit]
@@ -45,10 +52,12 @@ class ExtractedPage(BaseModel):
     excerpt: str | None = None
     chunks: list[str] = Field(default_factory=list)
     provider: str
+    extraction_fields: dict[str, Any] | None = None
     raw: dict[str, Any] | None = None
 
 
 class ExtractResponse(BaseModel):
     provider: str
+    mode: str
     pages: list[ExtractedPage]
     meta: ResponseMeta

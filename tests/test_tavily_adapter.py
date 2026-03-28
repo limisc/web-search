@@ -8,6 +8,7 @@ from web_search.config import clear_settings_cache
 from web_search.models.requests import SearchRequest
 from web_search.providers import clear_provider_cache
 from web_search.providers.tavily import TavilyProvider
+from web_search.services.search_service import clear_search_cache
 from web_search.utils.errors import ProviderError
 
 
@@ -15,6 +16,7 @@ from web_search.utils.errors import ProviderError
 def clear_caches() -> None:
     clear_settings_cache()
     clear_provider_cache()
+    clear_search_cache()
 
 
 @pytest.mark.asyncio
@@ -44,10 +46,11 @@ async def test_tavily_search_normalizes_results(monkeypatch: pytest.MonkeyPatch)
 
     provider = TavilyProvider()
     response = await provider.search(
-        SearchRequest(query="What is MCP?", include_raw_content=True)
+        SearchRequest(query="What is MCP?", extraction=True)
     )
 
     assert response.provider == "tavily"
+    assert response.intent == "general"
     assert response.answer is not None
     assert len(response.results) == 1
     assert response.results[0].title == "MCP Intro"

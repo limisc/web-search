@@ -35,13 +35,13 @@ class TavilyProvider:
         body: dict[str, Any] = {
             "query": request.query,
             "max_results": request.max_results,
-            "search_depth": request.search_depth,
-            "topic": request.topic,
-            "include_answer": request.include_answer,
-            "include_raw_content": request.include_raw_content,
+            "search_depth": self._search_depth_for(request),
+            "topic": self._topic_for(request),
+            "include_answer": self._include_answer_for(request),
+            "include_raw_content": request.extraction,
         }
-        if request.time_range:
-            body["time_range"] = request.time_range
+        if request.freshness:
+            body["time_range"] = request.freshness
         if request.include_domains:
             body["include_domains"] = request.include_domains
         if request.exclude_domains:
@@ -56,7 +56,7 @@ class TavilyProvider:
                 title=item.get("title") or item.get("url") or "Untitled",
                 url=item["url"],
                 snippet=item.get("content"),
-                content=item.get("raw_content") if request.include_raw_content else None,
+                content=item.get("raw_content") if request.extraction else None,
                 score=item.get("score"),
                 published_at=self._normalize_published_date(item.get("published_date")),
                 provider=self.name,
@@ -75,11 +75,16 @@ class TavilyProvider:
 
         return SearchResponse(
             query=request.query,
+            intent=request.intent,
             provider=self.name,
             answer=data.get("answer"),
             results=results,
             citations=citations,
-            meta=ResponseMeta(latency_ms=latency_ms),
+            meta=ResponseMeta(
+                latency_ms=latency_ms,
+                providers_used=[self.name],
+                verification_level=request.verification_level,
+            ),
         )
 
     async def extract(self, request: ExtractRequest) -> ExtractResponse:
@@ -87,7 +92,7 @@ class TavilyProvider:
         started = time.perf_counter()
         body: dict[str, Any] = {
             "urls": [str(url) for url in request.urls],
-            "extract_depth": request.extract_depth,
+            "extract_depth": "advanced" if request.mode == "structured" else "basic",
             "format": request.format,
         }
         if request.query:
@@ -121,8 +126,9 @@ class TavilyProvider:
 
         return ExtractResponse(
             provider=self.name,
+            mode=request.mode,
             pages=pages,
-            meta=ResponseMeta(latency_ms=latency_ms),
+            meta=ResponseMeta(latency_ms=latency_ms, providers_used=[self.name]),
         )
 
     async def _post(self, path: str, body: dict[str, Any]) -> dict[str, Any]:
@@ -202,6 +208,20 @@ class TavilyProvider:
                 provider=self.name,
                 error_type="provider_not_configured",
             )
+
+    @staticmethod
+    def _topic_for(request: SearchRequest) -> str:
+        return "news" if request.intent == "fresh" else "general"
+
+    @staticmethod
+    def _search_depth_for(request: SearchRequest) -> str:
+        if request.verification_level in {"medium", "high"} or request.extraction:
+            return "advanced"
+        return "basic"
+
+    @staticmethod
+    def _include_answer_for(request: SearchRequest) -> bool:
+        return request.intent != "social"
 
     @staticmethod
     def _normalize_published_date(value: str | None) -> str | None:

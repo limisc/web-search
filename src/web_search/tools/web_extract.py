@@ -12,33 +12,36 @@ from web_search.utils.errors import ProviderError
 @mcp.tool
 async def web_extract(
     urls: list[str],
-    provider: str = "tavily",
-    extract_depth: str = "basic",
+    mode: str = "content",
+    schema: dict | None = None,
     query: str | None = None,
     max_chunks: int | None = None,
     format: str = "markdown",
     debug: bool = False,
+    provider: str | None = None,
 ) -> dict:
-    """Extract content from one or more known URLs.
+    """Extract content or structured fields from one or more known URLs.
 
     Args:
         urls: One or more absolute HTTP(S) URLs.
-        provider: Extraction provider name. Only `tavily` is supported right now.
-        extract_depth: `basic` or `advanced` extraction mode.
+        mode: Extraction mode: `content` or `structured`.
+        schema: Optional structured extraction schema.
         query: Optional relevance query used by provider-side chunk ranking.
         max_chunks: Optional number of chunks to request when query is set.
         format: Output format, `markdown` or `text`.
         debug: Include provider-specific raw payloads in pages.
+        provider: Optional provider override.
     """
     try:
         request = ExtractRequest(
             urls=urls,
-            provider=provider,
-            extract_depth=extract_depth,
+            mode=mode,
+            schema=schema,
             query=query,
             max_chunks=max_chunks,
             format=format,
             debug=debug,
+            provider=provider,
         )
         response = await ExtractService().run(request)
         return response.model_dump(mode="json")
