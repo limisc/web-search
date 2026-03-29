@@ -37,7 +37,7 @@ uv run pytest -q
 uv run ruff check .
 ```
 
-4. If runtime validation is needed, start a temporary `preview` instance from `dev` on another port, usually `8001`.
+4. If runtime validation is needed, start a temporary `preview` instance from `dev` on another port, usually `8001`, with `./scripts/local_service.sh start preview`.
 5. Only after the batch passes, manually promote the chosen commit to the `live` worktree and restart the live service.
 6. Unless the user explicitly asks to test preview, keep other tools, scripts, and agents pointed at `live`, not `preview`.
 
@@ -57,6 +57,8 @@ If no stable local worktree exists yet, create one with:
 ```bash
 git worktree add --detach ../web-search-live HEAD
 ```
+
+For local HTTP runs, prefer `./scripts/local_service.sh` so logs, pid files, and temp files stay under `.runtime/` inside the checkout instead of spilling into `/tmp`.
 
 See `docs/06-development-workflow.md` for the full procedure and command examples.
 

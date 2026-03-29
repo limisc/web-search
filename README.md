@@ -82,6 +82,13 @@ uv run python -m web_search.app --transport stdio
 
 ### 4. Run locally over HTTP
 ```bash
+./scripts/local_service.sh start live
+```
+
+This starts the service in the background and keeps runtime state under `.runtime/` inside the checkout instead of scattering logs, pid files, and uv temp locks into `/tmp`.
+
+Direct foreground run still works when needed:
+```bash
 uv run python -m web_search.app --transport http --host 127.0.0.1 --port 8000 --path /mcp
 ```
 
@@ -116,7 +123,19 @@ Create the stable worktree once:
 git worktree add --detach ../web-search-live HEAD
 ```
 
-Then run the stable service from there over HTTP and keep routine usage pointed at it. This avoids file-watch churn and constant restarts while AI-driven edits are changing many files.
+Then run the stable service from there over HTTP and keep routine usage pointed at it. A simple default is:
+
+```bash
+cd ../web-search-live
+cp .env.example .env
+# then set TAVILY_API_KEY in .env
+uv sync --extra dev
+./scripts/local_service.sh start live
+```
+
+That keeps service logs, pid files, and temp files under `../web-search-live/.runtime/`. Use `./scripts/local_service.sh status live` or `./scripts/local_service.sh stop live` to inspect or stop it.
+
+This avoids file-watch churn and constant restarts while AI-driven edits are changing many files.
 
 The full workflow lives in:
 - `docs/06-development-workflow.md`

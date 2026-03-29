@@ -69,7 +69,15 @@ cd ../web-search-live
 cp .env.example .env
 # then set TAVILY_API_KEY in .env
 uv sync --extra dev
-uv run python -m web_search.app --transport http --host 127.0.0.1 --port 8000 --path /mcp
+./scripts/local_service.sh start live
+```
+
+That keeps service logs, pid files, and temp files under `../web-search-live/.runtime/` instead of `/tmp`.
+
+Check status or stop it with:
+```bash
+./scripts/local_service.sh status live
+./scripts/local_service.sh stop live
 ```
 
 Use that stable instance for local dogfooding, for example:
@@ -92,8 +100,10 @@ uv run ruff check .
 
 If runtime validation is needed before promotion, start a temporary preview instance from `dev`:
 ```bash
-uv run python -m web_search.app --transport http --host 127.0.0.1 --port 8001 --path /mcp
+./scripts/local_service.sh start preview
 ```
+
+That binds to `127.0.0.1:8001` by default and uses `./.runtime/preview.log`, `./.runtime/preview.pid`, and `./.runtime/tmp/`.
 
 Only after the batch looks good should it be promoted to `live`, followed by a manual restart of the live service.
 
