@@ -11,7 +11,10 @@ from web_search.services.search_service import clear_search_cache
 
 
 @pytest.fixture(autouse=True)
-def clear_caches() -> None:
+def clear_caches(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("BRAVE_SEARCH_API_KEY", raising=False)
+    monkeypatch.delenv("BRAVE_API_KEY", raising=False)
+    monkeypatch.delenv("BRAVE_BASE_URL", raising=False)
     clear_settings_cache()
     clear_provider_cache()
     clear_search_cache()
@@ -42,6 +45,40 @@ async def test_web_search_returns_invalid_request_for_bad_intent(app) -> None:
     assert response.status_code == 400
     assert response.json()["error"]["type"] == "invalid_request"
     assert "intent" in response.json()["error"]["message"]
+
+
+@pytest.mark.asyncio
+async def test_web_search_rejects_flat_country_field(app) -> None:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://testserver") as client:
+        response = await client.post(
+            "/api/web_search",
+            json={"query": "hello", "country": "US"},
+        )
+
+    assert response.status_code == 400
+    assert response.json() == {
+        "error": {
+            "type": "invalid_request",
+            "message": "Field 'country' Extra inputs are not permitted",
+        }
+    }
+
+
+@pytest.mark.asyncio
+async def test_web_search_rejects_flat_goggles_field(app) -> None:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://testserver") as client:
+        response = await client.post(
+            "/api/web_search",
+            json={"query": "hello", "goggles": ["$boost=3,site=docs.python.org"]},
+        )
+
+    assert response.status_code == 400
+    assert response.json() == {
+        "error": {
+            "type": "invalid_request",
+            "message": "Field 'goggles' Extra inputs are not permitted",
+        }
+    }
 
 
 @pytest.mark.asyncio
@@ -135,3 +172,64 @@ async def test_web_search_returns_normalized_success(app, monkeypatch: pytest.Mo
     assert body["query"] == "What is MCP?"
     assert body["meta"]["route"] == "single:low_cost"
     assert body["results"][0]["title"] == "MCP Intro"
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_web_search_returns_brave_success_when_overridden(app, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("BRAVE_SEARCH_API_KEY", "test-key")
+    monkeypatch.setenv("BRAVE_BASE_URL", "https://api.search.brave.com/res/v1")
+
+    respx.get("https://api.search.brave.com/res/v1/web/search").mock(
+        return_value=Response(
+            200,
+            json={
+                "web": {
+                    "results": [
+                        {
+                            "title": "Brave Result",
+                            "url": "https://example.com/brave-result",
+                            "description": "Brave result snippet",
+                        }
+                    ]
+                }
+            },
+        )
+    )
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://testserver") as client:
+        response = await client.post(
+            "/api/web_search",
+            json={
+                "query": "What is MCP?",
+                "provider": "brave",
+                "preferences": {"country": "us", "safesearch": "strict"},
+                "provider_options": {"brave": {"goggles": "$boost=3,site=docs.python.org"}},
+            },
+        )
+
+    body = response.json()
+    assert response.status_code == 200
+    assert body["provider"] == "brave"
+    assert body["meta"]["route"] == "provider_override:low_cost"
+    assert body["results"][0]["title"] == "Brave Result"
+
+
+@pytest.mark.asyncio
+async def test_web_search_rejects_brave_provider_options_without_override(app) -> None:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://testserver") as client:
+        response = await client.post(
+            "/api/web_search",
+            json={
+                "query": "What is MCP?",
+                "provider_options": {"brave": {"goggles": ["$boost=3,site=docs.python.org"]}},
+            },
+        )
+
+    assert response.status_code == 400
+    assert response.json() == {
+        "error": {
+            "type": "invalid_request",
+            "message": "provider_options.brave requires provider='brave'",
+        }
+    }

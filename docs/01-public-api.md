@@ -26,8 +26,9 @@ Unless explicitly documented here, it is **not** a compatibility promise.
 The docs in this repository intentionally avoid promising provider behavior that is not actually implemented yet.
 
 At the moment:
-- Tavily is the only real execution provider
-- routing abstractions exist, but they should be read as internal structure, not as proof of multi-provider support
+- Tavily-backed search and extract are implemented
+- Brave-backed web search is implemented
+- routing abstractions exist, but they should be read as internal structure, not as proof of full multi-provider support
 - labels such as `balanced`, `high_reliability`, or future verification levels should be read as design targets unless explicitly marked as implemented
 
 ---
@@ -42,13 +43,25 @@ Unified source-discovery entrypoint.
   "query": "latest MCP authorization docs",
   "intent": "general",
   "freshness": "week",
+  "preferences": {
+    "country": "US",
+    "search_lang": "en",
+    "ui_lang": "en-US",
+    "safesearch": "moderate",
+    "spellcheck": true
+  },
+  "provider_options": {
+    "brave": {
+      "goggles": ["https://example.com/dev-docs.goggle"]
+    }
+  },
   "include_domains": ["modelcontextprotocol.io"],
   "exclude_domains": [],
   "max_results": 5,
   "verification_level": "none",
   "extraction": false,
   "debug": false,
-  "provider": null
+  "provider": "brave"
 }
 ```
 
@@ -56,6 +69,8 @@ Unified source-discovery entrypoint.
 - `query`: search text
 - `intent`: `docs | fresh | general | social`
 - `freshness`: `day | week | month | year | any`
+- `preferences`: optional provider-agnostic search preferences such as `country`, `search_lang`, `ui_lang`, `safesearch`, and `spellcheck`
+- `provider_options`: optional provider-specific options. For Brave web search, use `provider_options.brave.goggles`
 - `domains`: shorthand allowlist merged into `include_domains`
 - `include_domains`: explicit allowlist
 - `exclude_domains`: denylist
@@ -73,10 +88,18 @@ Unified source-discovery entrypoint.
 
 ### Current implementation note
 - Tavily-backed search is implemented
+- Brave-backed web search is implemented
 - the public contract is intentionally broader than today's execution reality
-- `docs`, `fresh`, and `social` are valid contract intents, but their preferred provider lanes are not implemented yet
+- generic locale and safety hints now live under `preferences`
+- Brave-specific knobs now live under `provider_options.brave`
+- Brave web search currently maps `preferences.country`, `preferences.search_lang`, `preferences.ui_lang`, `preferences.safesearch`, `preferences.spellcheck`, `freshness`, `provider_options.brave.goggles`, and domain filters
+- `include_domains` and `exclude_domains` are currently applied to Brave through search operators inside the query string
+- Brave web search automatically switches to POST for multi-goggle or long-query requests, following the official POST request-body support
+- `provider_options.brave` requires `provider="brave"`
+- `docs` and `social` are valid contract intents, but their preferred provider lanes are not implemented yet
+- `fresh` can route through Brave when configured, but there is no dedicated Brave News lane yet
 - `verification_level` is currently a contract field, not proof of real cross-provider verification
-- `provider` override exists mainly to force the currently available path during the transition period
+- `provider` override exists mainly to force an available path during the transition period
 
 ### Example
 ```bash

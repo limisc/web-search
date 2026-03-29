@@ -4,7 +4,7 @@
 
 | Phase | Status | Core goal | Notes |
 |---|---|---|---|
-| V1 | in progress | unified interfaces + thin MCP + HTTP APIs + orchestrator skeleton | code already moved here, but real execution is still mostly Tavily-backed |
+| V1 | in progress | unified interfaces + thin MCP + HTTP APIs + orchestrator skeleton | code already moved here, with Tavily plus Brave web-search execution in place |
 | V1.5 | planned | verification + future monitoring building blocks | depends on basic multi-provider capabilities landing first |
 | V2 | planned | intelligent routing, ranking, cost-awareness, health-awareness | after V1.5 stabilizes |
 
@@ -15,7 +15,8 @@
 This roadmap describes the direction of the repository, not a claim that every named mechanism already exists.
 
 Important reality checks:
-- Tavily is still the only real execution provider
+- Tavily-backed search and extract are implemented
+- Brave-backed web search is implemented
 - names such as `balanced`, `high_reliability`, or `top-2` are roadmap semantics unless explicitly implemented
 - future monitoring is roadmap-only, not part of the current public surface
 - provider abstraction exists structurally, but most of its long-term value is still ahead of the codebase
@@ -66,8 +67,8 @@ Goal: stabilize the public contract, HTTP API, MCP thin facade, and router/plann
 - [x] planner skeleton
 - [x] query cache
 - [x] Tavily provider adapted to the new request model
+- [x] Brave web-search adapter
 - [ ] Exa adapter
-- [ ] Brave adapter
 - [ ] Firecrawl adapter
 - [ ] provider capability matrix finalized
 - [x] HTTP API integration tests

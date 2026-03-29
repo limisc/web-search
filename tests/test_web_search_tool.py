@@ -13,10 +13,101 @@ from web_search.tools.web_search import web_search
 
 
 @pytest.fixture(autouse=True)
-def clear_caches() -> None:
+def clear_caches(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("BRAVE_SEARCH_API_KEY", raising=False)
+    monkeypatch.delenv("BRAVE_API_KEY", raising=False)
+    monkeypatch.delenv("BRAVE_BASE_URL", raising=False)
     clear_settings_cache()
     clear_provider_cache()
     clear_search_cache()
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_web_search_supports_brave_provider_override(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("BRAVE_SEARCH_API_KEY", "test-key")
+    monkeypatch.setenv("BRAVE_BASE_URL", "https://api.search.brave.com/res/v1")
+
+    respx.get("https://api.search.brave.com/res/v1/web/search").mock(
+        return_value=Response(
+            200,
+            json={
+                "web": {
+                    "results": [
+                        {
+                            "title": "Model Context Protocol",
+                            "url": "https://modelcontextprotocol.io/docs/getting-started/intro",
+                            "description": "MCP connects models to tools.",
+                        }
+                    ]
+                }
+            },
+        )
+    )
+
+    result = await web_search(query="hello", provider="brave")
+
+    assert result["provider"] == "brave"
+    assert result["results"][0]["title"] == "Model Context Protocol"
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_web_search_supports_nested_preferences(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("BRAVE_SEARCH_API_KEY", "test-key")
+    monkeypatch.setenv("BRAVE_BASE_URL", "https://api.search.brave.com/res/v1")
+
+    captured: dict[str, object] = {}
+
+    def handler(request: Request) -> Response:
+        captured["country"] = request.url.params.get("country")
+        captured["safesearch"] = request.url.params.get("safesearch")
+        return Response(200, json={"web": {"results": []}})
+
+    respx.get("https://api.search.brave.com/res/v1/web/search").mock(side_effect=handler)
+
+    result = await web_search(
+        query="hello",
+        provider="brave",
+        preferences={"country": "us", "safesearch": "strict"},
+    )
+
+    assert result["provider"] == "brave"
+    assert captured["country"] == "US"
+    assert captured["safesearch"] == "strict"
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_web_search_supports_brave_goggles(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("BRAVE_SEARCH_API_KEY", "test-key")
+    monkeypatch.setenv("BRAVE_BASE_URL", "https://api.search.brave.com/res/v1")
+
+    captured: dict[str, object] = {}
+
+    def handler(request: Request) -> Response:
+        captured["method"] = request.method
+        captured["body"] = request.content.decode("utf-8")
+        return Response(200, json={"web": {"results": []}})
+
+    respx.post("https://api.search.brave.com/res/v1/web/search").mock(side_effect=handler)
+
+    result = await web_search(
+        query="hello",
+        provider="brave",
+        provider_options={
+            "brave": {
+                "goggles": [
+                    "https://example.com/dev-docs.goggle",
+                    "$boost=3,site=docs.python.org",
+                ]
+            }
+        },
+    )
+
+    assert result["provider"] == "brave"
+    assert captured["method"] == "POST"
+    assert '"goggles":["https://example.com/dev-docs.goggle","$boost=3,site=docs.python.org"]' in str(captured["body"])
 
 
 @pytest.mark.asyncio
@@ -121,6 +212,16 @@ async def test_web_search_raises_provider_not_configured(monkeypatch: pytest.Mon
 
     with pytest.raises(ToolError):
         await web_search(query="hello")
+
+
+
+@pytest.mark.asyncio
+async def test_web_search_rejects_provider_options_without_matching_provider() -> None:
+    with pytest.raises(MCPValidationError):
+        await web_search(
+            query="hello",
+            provider_options={"brave": {"goggles": ["$boost=3,site=docs.python.org"]}},
+        )
 
 
 @pytest.mark.asyncio

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from fastmcp.exceptions import ToolError, ValidationError as MCPValidationError
 from pydantic import ValidationError
 
@@ -14,6 +16,8 @@ async def web_search(
     query: str,
     intent: str = "general",
     freshness: str | None = None,
+    preferences: dict[str, Any] | None = None,
+    provider_options: dict[str, Any] | None = None,
     domains: list[str] | None = None,
     include_domains: list[str] | None = None,
     exclude_domains: list[str] | None = None,
@@ -29,6 +33,8 @@ async def web_search(
         query: Search query text.
         intent: Search intent: `docs`, `fresh`, `general`, or `social`.
         freshness: Optional freshness filter: `day`, `week`, `month`, `year`, or `any`.
+        preferences: Optional search preferences such as `country`, `search_lang`, `ui_lang`, `safesearch`, and `spellcheck`.
+        provider_options: Optional provider-specific options. For Brave, use `{"brave": {"goggles": [...]}}`.
         domains: Optional shorthand domain allowlist.
         include_domains: Optional allowlist of domains.
         exclude_domains: Optional denylist of domains.
@@ -43,6 +49,8 @@ async def web_search(
             query=query,
             intent=intent,
             freshness=freshness,
+            preferences=preferences,
+            provider_options=provider_options,
             domains=domains,
             include_domains=include_domains,
             exclude_domains=exclude_domains,

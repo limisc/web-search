@@ -113,12 +113,15 @@ Prefer HTTP over stdio for local dogfooding because one stable HTTP process can 
 
 When editing Python in this repository, keep these rules:
 - validate external inputs at the edge, then pass typed request models through the service layer
+- keep the root request contract capability-first; if a knob is only meaningful for one provider, put it in provider-specific options or keep it inside the adapter instead of exposing it at the top level
+- prefer direct cleanup over compatibility scaffolding when there are no real external callers to preserve; do not keep deprecated fields, transition shims, or duplicate paths just for hypothetical migrations
+- when refactoring, simplify the structure instead of layering adapters on adapters; rewrite the local model or flow if that is the cleaner shape
 - if tool-layer inputs are wider than model field types, add an explicit adapter or factory method instead of scattering coercion or broad casts through the code
 - do not add `Any` or `cast(...)` just to suppress type checker complaints when the boundary can be modeled properly
 - avoid mutating cached response objects after they are stored; copy them before adding request-specific metadata such as cache-hit markers
 - keep network client lifecycles explicit; if a client is long-lived, wire startup and shutdown cleanly, otherwise keep it request-scoped
 - add or update tests in the same batch as behavior changes
-- keep docs and implementation aligned; if runtime reality changes, update the focused docs in the same PR
+- keep docs aligned to current reality and concise for private use; avoid rollout-style deprecation language unless a real migration path exists
 
 ## Validation steps
 

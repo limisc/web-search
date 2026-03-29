@@ -66,6 +66,17 @@ Some of these already exist in code. The full HTTP + MCP normalization layer is 
 }
 ```
 
+### Budget exceeded
+```json
+{
+  "error": {
+    "type": "budget_exceeded",
+    "message": "Brave Search rate limit exceeded",
+    "provider": "brave"
+  }
+}
+```
+
 ### Provider not implemented
 ```json
 {

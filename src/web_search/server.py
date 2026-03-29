@@ -51,6 +51,8 @@ def _validation_error_message(exc: ValidationError) -> str:
     first_error = errors[0]
     loc = ".".join(str(part) for part in first_error.get("loc", ()) if part is not None)
     message = first_error.get("msg") or "Invalid request"
+    if message.startswith("Value error, "):
+        message = message.removeprefix("Value error, ")
     if loc:
         return f"Field '{loc}' {message}"
     return message

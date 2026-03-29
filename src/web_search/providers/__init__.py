@@ -3,13 +3,15 @@ from __future__ import annotations
 from functools import lru_cache
 
 from web_search.providers.base import SearchProvider
+from web_search.providers.brave import BraveProvider
 from web_search.providers.tavily import TavilyProvider
 from web_search.utils.errors import ProviderError
 
 _PROVIDER_FACTORIES = {
     "tavily": TavilyProvider,
+    "brave": BraveProvider,
 }
-_OPTIONAL_PROVIDER_NAMES = {"exa", "brave", "firecrawl", "grok"}
+_OPTIONAL_PROVIDER_NAMES = {"exa", "firecrawl", "grok"}
 
 
 @lru_cache(maxsize=None)

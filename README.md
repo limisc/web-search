@@ -32,19 +32,20 @@ It aims to expose stable capabilities such as source discovery and extraction wi
 Implemented today:
 - Tavily-backed search
 - Tavily-backed extract
+- Brave-backed web search
 - thin MCP facade
 - HTTP APIs
 - router / planner skeleton
 - query cache
 
 Not implemented yet:
-- Exa / Brave / Firecrawl / Grok adapters
+- Exa / Firecrawl / Grok adapters
 - true multi-provider fan-out
 - true verification / agreement scoring
 - structured extraction execution
 - monitoring pipeline / scheduler integration / alerts
 
-So the repository is currently **orchestrator-shaped**, but still **Tavily-backed in practice**.
+So the repository is currently **orchestrator-shaped** with **Tavily + Brave execution paths**, while broader routing and verification are still in progress.
 
 ---
 
@@ -66,6 +67,7 @@ Read the full purpose doc here:
 ```bash
 cp .env.example .env
 # then edit .env and set TAVILY_API_KEY
+# optionally set BRAVE_SEARCH_API_KEY for Brave web search
 ```
 
 ### 2. Create virtualenv and install
@@ -129,6 +131,7 @@ Then run the stable service from there over HTTP and keep routine usage pointed 
 cd ../web-search-live
 cp .env.example .env
 # then set TAVILY_API_KEY in .env
+# optionally set BRAVE_SEARCH_API_KEY in .env
 uv sync --extra dev
 ./scripts/local_service.sh start live
 ```
@@ -202,6 +205,7 @@ src/web_search/
   providers/
     __init__.py
     base.py
+    brave.py
     tavily.py
   models/
     requests.py

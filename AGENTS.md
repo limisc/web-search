@@ -17,12 +17,15 @@ When coding in this repo and also using its own `web_search` or `web_extract` ca
 
 When changing Python code in this repository:
 
-- keep boundary validation explicit at the edge; parse tool and HTTP inputs into request models before service logic
-- do not silence the type system with broad `Any` or `cast(...)` just to make editor warnings disappear; if an input boundary is wider than the internal model, add a dedicated adapter or factory method
+- keep boundary validation explicit at the edge; parse tool and HTTP inputs into typed request models before service logic
+- keep the root request contract capability-first; do not leak provider-specific knobs into top-level schema fields when they belong in provider-specific option objects or adapter internals
+- prefer the current clean shape over transition scaffolding; do not keep compatibility shims, deprecated fields, or dual paths unless an active caller really needs them
+- during refactors, reduce moving parts; do not stack patch-on-patch adapters when rewriting the section or model directly is cleaner
+- do not silence the type system with broad `Any` or `cast(...)` just to make editor warnings disappear; if an input boundary is wider than the internal model, add a dedicated typed adapter or factory method
 - prefer small typed helpers over implicit coercion spread across handlers and services
 - avoid mutating shared cached objects after storing them; return copies when cached state needs request-specific metadata
 - own resource lifecycles explicitly; do not keep long-lived network clients around unless startup and shutdown are also wired cleanly
-- keep docs honest; do not claim provider behavior, routing, or verification that is not implemented yet
+- keep docs concise and aligned to current reality; avoid public-rollout or deprecation-heavy wording unless a real migration path is needed
 - if behavior changes, add or update tests in the same batch
 - finish each logical batch with `uv run pytest -q` and `uv run ruff check .`
 
