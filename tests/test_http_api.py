@@ -15,6 +15,8 @@ def clear_caches(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("BRAVE_SEARCH_API_KEY", raising=False)
     monkeypatch.delenv("BRAVE_API_KEY", raising=False)
     monkeypatch.delenv("BRAVE_BASE_URL", raising=False)
+    monkeypatch.delenv("EXA_API_KEY", raising=False)
+    monkeypatch.delenv("EXA_BASE_URL", raising=False)
     clear_settings_cache()
     clear_provider_cache()
     clear_search_cache()
@@ -233,3 +235,79 @@ async def test_web_search_rejects_brave_provider_options_without_override(app) -
             "message": "provider_options.brave requires provider='brave'",
         }
     }
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_web_search_returns_exa_success_when_overridden(app, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("EXA_API_KEY", "test-key")
+    monkeypatch.setenv("EXA_BASE_URL", "https://api.exa.ai")
+
+    respx.post("https://api.exa.ai/search").mock(
+        return_value=Response(
+            200,
+            json={
+                "results": [
+                    {
+                        "title": "Exa Result",
+                        "url": "https://example.com/exa-result",
+                        "highlights": ["Exa result snippet"],
+                    }
+                ]
+            },
+        )
+    )
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://testserver") as client:
+        response = await client.post(
+            "/api/web_search",
+            json={
+                "query": "What is MCP?",
+                "provider": "exa",
+                "preferences": {"country": "us", "safesearch": "strict"},
+            },
+        )
+
+    body = response.json()
+    assert response.status_code == 200
+    assert body["provider"] == "exa"
+    assert body["meta"]["route"] == "provider_override:low_cost"
+    assert body["results"][0]["title"] == "Exa Result"
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_web_search_routes_docs_to_exa_when_configured(app, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("EXA_API_KEY", "test-key")
+    monkeypatch.setenv("EXA_BASE_URL", "https://api.exa.ai")
+    monkeypatch.setenv("BRAVE_SEARCH_API_KEY", "brave-key")
+    monkeypatch.setenv("BRAVE_BASE_URL", "https://api.search.brave.com/res/v1")
+    monkeypatch.setenv("TAVILY_API_KEY", "tavily-key")
+    monkeypatch.setenv("TAVILY_BASE_URL", "https://api.tavily.com")
+
+    respx.post("https://api.exa.ai/search").mock(
+        return_value=Response(
+            200,
+            json={
+                "results": [
+                    {
+                        "title": "Official MCP docs",
+                        "url": "https://modelcontextprotocol.io/docs/getting-started/intro",
+                        "highlights": ["Official docs snippet"],
+                    }
+                ]
+            },
+        )
+    )
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://testserver") as client:
+        response = await client.post(
+            "/api/web_search",
+            json={"query": "What is MCP?", "intent": "docs", "max_results": 3},
+        )
+
+    body = response.json()
+    assert response.status_code == 200
+    assert body["provider"] == "exa"
+    assert body["meta"]["route"] == "fallback_candidate:low_cost"
+    assert body["results"][0]["title"] == "Official MCP docs"

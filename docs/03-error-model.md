@@ -82,8 +82,8 @@ Some of these already exist in code. The full HTTP + MCP normalization layer is 
 {
   "error": {
     "type": "provider_not_implemented",
-    "message": "Provider not implemented yet: exa",
-    "provider": "exa"
+    "message": "Provider not implemented yet: firecrawl",
+    "provider": "firecrawl"
   }
 }
 ```

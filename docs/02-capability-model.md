@@ -19,6 +19,7 @@ It should **not** be read as proof that all listed routing lanes already exist i
 At the moment:
 - Tavily-backed search and extract are implemented
 - Brave-backed web search is implemented
+- Exa-backed web search is implemented
 - multi-provider routing semantics are still mostly design-time abstractions
 - provider tables below are planning aids unless explicitly marked as implemented
 
@@ -97,7 +98,7 @@ This table defines semantic lanes, not current implementation guarantees.
 
 | Provider | Capabilities | Current status |
 |---|---|---|
-| Exa | `authoritative_search`, `broad_search`, `content_extract` | planned |
+| Exa | `authoritative_search`, `broad_search` | implemented for web search; extract still planned |
 | Tavily | `broad_search`, `content_extract` | implemented |
 | Brave | `broad_search` | implemented for web search; freshness-specialized lanes still planned |
 | Firecrawl | `content_extract`, `structured_extract` | planned |
@@ -112,7 +113,7 @@ Because only part of the multi-provider graph is really implemented right now, a
 | Intent | Target routing design | Current actual behavior |
 |---|---|---|
 | `general` | Tavily or Brave, with broader routing later | Brave first when configured, otherwise Tavily |
-| `docs` | Exa-oriented lane later | Brave or Tavily fallback, no docs-specialized lane yet |
+| `docs` | Exa-oriented lane later | Exa first when configured, then Brave or Tavily fallback |
 | `fresh` | Grok + Brave lane later | Brave or Tavily fallback, no news-specialized lane yet |
 | `social` | Grok-oriented lane later | Brave or Tavily fallback, no social-specialized lane yet |
 

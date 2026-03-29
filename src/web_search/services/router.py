@@ -38,8 +38,15 @@ class Router:
                 extract_requested=request.extraction,
             )
 
-        if request.intent in {"docs", "social"}:
-            # These lanes are part of the public contract but are not natively implemented yet.
+        if request.intent == "docs":
+            return ProviderPlan(
+                route="fallback_candidate",
+                search_providers=self._docs_search_providers(general_providers),
+                extract_requested=request.extraction,
+            )
+
+        if request.intent == "social":
+            # This lane is part of the public contract but is not natively implemented yet.
             # Keep the current runtime honest by falling back to currently available providers.
             return ProviderPlan(
                 route="fallback_candidate",
@@ -69,3 +76,12 @@ class Router:
         if providers:
             return tuple(providers)
         return ("tavily",)
+
+    def _docs_search_providers(self, general_providers: tuple[str, ...]) -> tuple[str, ...]:
+        providers: list[str] = []
+        if self.settings.exa_api_key:
+            providers.append("exa")
+        for provider in general_providers:
+            if provider not in providers:
+                providers.append(provider)
+        return tuple(providers)

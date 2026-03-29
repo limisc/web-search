@@ -17,6 +17,8 @@ def clear_caches(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("BRAVE_SEARCH_API_KEY", raising=False)
     monkeypatch.delenv("BRAVE_API_KEY", raising=False)
     monkeypatch.delenv("BRAVE_BASE_URL", raising=False)
+    monkeypatch.delenv("EXA_API_KEY", raising=False)
+    monkeypatch.delenv("EXA_BASE_URL", raising=False)
     clear_settings_cache()
     clear_provider_cache()
     clear_search_cache()
@@ -108,6 +110,33 @@ async def test_web_search_supports_brave_goggles(monkeypatch: pytest.MonkeyPatch
     assert result["provider"] == "brave"
     assert captured["method"] == "POST"
     assert '"goggles":["https://example.com/dev-docs.goggle","$boost=3,site=docs.python.org"]' in str(captured["body"])
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_web_search_supports_exa_provider_override(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("EXA_API_KEY", "test-key")
+    monkeypatch.setenv("EXA_BASE_URL", "https://api.exa.ai")
+
+    respx.post("https://api.exa.ai/search").mock(
+        return_value=Response(
+            200,
+            json={
+                "results": [
+                    {
+                        "title": "Model Context Protocol",
+                        "url": "https://modelcontextprotocol.io/docs/getting-started/intro",
+                        "highlights": ["MCP connects models to tools."],
+                    }
+                ]
+            },
+        )
+    )
+
+    result = await web_search(query="hello", provider="exa")
+
+    assert result["provider"] == "exa"
+    assert result["results"][0]["title"] == "Model Context Protocol"
 
 
 @pytest.mark.asyncio

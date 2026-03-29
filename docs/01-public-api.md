@@ -28,6 +28,7 @@ The docs in this repository intentionally avoid promising provider behavior that
 At the moment:
 - Tavily-backed search and extract are implemented
 - Brave-backed web search is implemented
+- Exa-backed web search is implemented
 - routing abstractions exist, but they should be read as internal structure, not as proof of full multi-provider support
 - labels such as `balanced`, `high_reliability`, or future verification levels should be read as design targets unless explicitly marked as implemented
 
@@ -89,15 +90,19 @@ Unified source-discovery entrypoint.
 ### Current implementation note
 - Tavily-backed search is implemented
 - Brave-backed web search is implemented
+- Exa-backed web search is implemented
 - the public contract is intentionally broader than today's execution reality
 - generic locale and safety hints now live under `preferences`
 - Brave-specific knobs now live under `provider_options.brave`
 - Brave web search currently maps `preferences.country`, `preferences.search_lang`, `preferences.ui_lang`, `preferences.safesearch`, `preferences.spellcheck`, `freshness`, `provider_options.brave.goggles`, and domain filters
+- Exa web search currently maps `preferences.country`, `preferences.safesearch`, `freshness`, domain filters, and `extraction`
+- Exa search uses `contents.highlights` by default and adds `contents.text` when `extraction=true`
 - `include_domains` and `exclude_domains` are currently applied to Brave through search operators inside the query string
 - Brave web search automatically switches to POST for multi-goggle or long-query requests, following the official POST request-body support
 - `provider_options.brave` requires `provider="brave"`
-- `docs` and `social` are valid contract intents, but their preferred provider lanes are not implemented yet
-- `fresh` can route through Brave when configured, but there is no dedicated Brave News lane yet
+- `docs` now prefers Exa when configured, then falls back to Brave or Tavily
+- `social` is still a contract lane without a social-specialized provider yet
+- `fresh` still routes through the currently configured general providers, and there is no dedicated news-specialized lane yet
 - `verification_level` is currently a contract field, not proof of real cross-provider verification
 - `provider` override exists mainly to force an available path during the transition period
 
