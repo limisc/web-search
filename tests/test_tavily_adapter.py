@@ -13,7 +13,9 @@ from web_search.utils.errors import ProviderError
 
 
 @pytest.fixture(autouse=True)
-def clear_caches() -> None:
+def clear_caches(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("TAVILY_API_KEY", "")
+    monkeypatch.setenv("TAVILY_BASE_URL", "https://api.tavily.com")
     clear_settings_cache()
     clear_provider_cache()
     clear_search_cache()
@@ -108,7 +110,7 @@ async def test_tavily_search_retries_connection_errors(monkeypatch: pytest.Monke
 @pytest.mark.asyncio
 @respx.mock
 async def test_tavily_search_raises_not_configured_without_key(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.delenv("TAVILY_API_KEY", raising=False)
+    monkeypatch.setenv("TAVILY_API_KEY", "")
 
     provider = TavilyProvider()
     with pytest.raises(ProviderError) as exc_info:

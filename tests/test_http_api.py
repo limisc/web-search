@@ -12,11 +12,13 @@ from web_search.services.search_service import clear_search_cache
 
 @pytest.fixture(autouse=True)
 def clear_caches(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.delenv("BRAVE_SEARCH_API_KEY", raising=False)
-    monkeypatch.delenv("BRAVE_API_KEY", raising=False)
-    monkeypatch.delenv("BRAVE_BASE_URL", raising=False)
-    monkeypatch.delenv("EXA_API_KEY", raising=False)
-    monkeypatch.delenv("EXA_BASE_URL", raising=False)
+    monkeypatch.setenv("TAVILY_API_KEY", "")
+    monkeypatch.setenv("TAVILY_BASE_URL", "https://api.tavily.com")
+    monkeypatch.setenv("BRAVE_SEARCH_API_KEY", "")
+    monkeypatch.setenv("BRAVE_API_KEY", "")
+    monkeypatch.setenv("BRAVE_BASE_URL", "https://api.search.brave.com/res/v1")
+    monkeypatch.setenv("EXA_API_KEY", "")
+    monkeypatch.setenv("EXA_BASE_URL", "https://api.exa.ai")
     clear_settings_cache()
     clear_provider_cache()
     clear_search_cache()
@@ -120,7 +122,7 @@ async def test_web_search_returns_invalid_request_for_bad_json(app) -> None:
 
 @pytest.mark.asyncio
 async def test_web_search_returns_provider_not_configured_when_key_missing(app, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.delenv("TAVILY_API_KEY", raising=False)
+    monkeypatch.setenv("TAVILY_API_KEY", "")
     monkeypatch.setenv("TAVILY_BASE_URL", "https://api.tavily.com")
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://testserver") as client:

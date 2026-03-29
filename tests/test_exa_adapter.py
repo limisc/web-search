@@ -14,8 +14,8 @@ from web_search.utils.errors import ProviderError
 
 @pytest.fixture(autouse=True)
 def clear_caches(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.delenv("EXA_API_KEY", raising=False)
-    monkeypatch.delenv("EXA_BASE_URL", raising=False)
+    monkeypatch.setenv("EXA_API_KEY", "")
+    monkeypatch.setenv("EXA_BASE_URL", "https://api.exa.ai")
     clear_settings_cache()
     clear_provider_cache()
     clear_search_cache()
@@ -76,6 +76,7 @@ async def test_exa_search_maps_supported_params(monkeypatch: pytest.MonkeyPatch)
     await provider.search(
         SearchRequest(
             query="python asyncio",
+            intent="docs",
             provider="exa",
             preferences={"country": "us", "safesearch": "strict"},
             include_domains=["docs.python.org"],
@@ -86,6 +87,7 @@ async def test_exa_search_maps_supported_params(monkeypatch: pytest.MonkeyPatch)
     )
 
     body = str(captured["body"])
+    assert '"query":"python asyncio official documentation"' in body
     assert '"userLocation":"US"' in body
     assert '"moderation":true' in body
     assert '"includeDomains":["docs.python.org"]' in body
@@ -93,6 +95,21 @@ async def test_exa_search_maps_supported_params(monkeypatch: pytest.MonkeyPatch)
     assert '"contents":{' in body
     assert '"text":{"maxCharacters":12000}' in body
     assert '"startPublishedDate":' in body
+
+
+@pytest.mark.asyncio
+async def test_exa_search_adds_docs_hint_only_for_docs_intent() -> None:
+    provider = ExaProvider()
+
+    docs_query = provider._query_for(SearchRequest(query="Model Context Protocol", intent="docs", provider="exa"))
+    general_query = provider._query_for(SearchRequest(query="Model Context Protocol", intent="general", provider="exa"))
+    explicit_query = provider._query_for(
+        SearchRequest(query="Model Context Protocol official documentation", intent="docs", provider="exa")
+    )
+
+    assert docs_query == "Model Context Protocol official documentation"
+    assert general_query == "Model Context Protocol"
+    assert explicit_query == "Model Context Protocol official documentation"
 
 
 @pytest.mark.asyncio
@@ -158,7 +175,7 @@ async def test_exa_search_maps_rate_limit_to_budget_exceeded(monkeypatch: pytest
 
 @pytest.mark.asyncio
 async def test_exa_search_raises_not_configured_without_key(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.delenv("EXA_API_KEY", raising=False)
+    monkeypatch.setenv("EXA_API_KEY", "")
 
     provider = ExaProvider()
     with pytest.raises(ProviderError) as exc_info:

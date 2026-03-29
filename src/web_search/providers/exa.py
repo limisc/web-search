@@ -164,7 +164,7 @@ class ExaProvider:
 
     def _search_body_for(self, request: SearchRequest) -> dict[str, Any]:
         body: dict[str, Any] = {
-            "query": request.query,
+            "query": self._query_for(request),
             "type": "auto",
             "numResults": request.max_results,
             "contents": self._contents_for(request),
@@ -184,6 +184,17 @@ class ExaProvider:
         if start_published_date:
             body["startPublishedDate"] = start_published_date
         return body
+
+    @staticmethod
+    def _query_for(request: SearchRequest) -> str:
+        if request.intent != "docs":
+            return request.query
+
+        normalized_query = request.query.lower()
+        if any(marker in normalized_query for marker in ("official documentation", "official docs")):
+            return request.query
+
+        return f"{request.query} official documentation".strip()
 
     @staticmethod
     def _contents_for(request: SearchRequest) -> dict[str, Any]:

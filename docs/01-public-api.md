@@ -97,6 +97,7 @@ Unified source-discovery entrypoint.
 - Brave web search currently maps `preferences.country`, `preferences.search_lang`, `preferences.ui_lang`, `preferences.safesearch`, `preferences.spellcheck`, `freshness`, `provider_options.brave.goggles`, and domain filters
 - Exa web search currently maps `preferences.country`, `preferences.safesearch`, `freshness`, domain filters, and `extraction`
 - Exa search uses `contents.highlights` by default and adds `contents.text` when `extraction=true`
+- for `intent=docs`, the Exa adapter currently adds an official-documentation hint to the query text to improve canonical-source ranking
 - `include_domains` and `exclude_domains` are currently applied to Brave through search operators inside the query string
 - Brave web search automatically switches to POST for multi-goggle or long-query requests, following the official POST request-body support
 - `provider_options.brave` requires `provider="brave"`

@@ -14,9 +14,9 @@ from web_search.utils.errors import ProviderError
 
 @pytest.fixture(autouse=True)
 def clear_caches(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.delenv("BRAVE_SEARCH_API_KEY", raising=False)
-    monkeypatch.delenv("BRAVE_API_KEY", raising=False)
-    monkeypatch.delenv("BRAVE_BASE_URL", raising=False)
+    monkeypatch.setenv("BRAVE_SEARCH_API_KEY", "")
+    monkeypatch.setenv("BRAVE_API_KEY", "")
+    monkeypatch.setenv("BRAVE_BASE_URL", "https://api.search.brave.com/res/v1")
     clear_settings_cache()
     clear_provider_cache()
     clear_search_cache()
@@ -257,8 +257,8 @@ async def test_brave_search_maps_rate_limit_to_budget_exceeded(monkeypatch: pyte
 
 @pytest.mark.asyncio
 async def test_brave_search_raises_not_configured_without_key(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.delenv("BRAVE_SEARCH_API_KEY", raising=False)
-    monkeypatch.delenv("BRAVE_API_KEY", raising=False)
+    monkeypatch.setenv("BRAVE_SEARCH_API_KEY", "")
+    monkeypatch.setenv("BRAVE_API_KEY", "")
 
     provider = BraveProvider()
     with pytest.raises(ProviderError) as exc_info:

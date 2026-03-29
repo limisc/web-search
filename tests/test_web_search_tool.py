@@ -14,11 +14,13 @@ from web_search.tools.web_search import web_search
 
 @pytest.fixture(autouse=True)
 def clear_caches(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.delenv("BRAVE_SEARCH_API_KEY", raising=False)
-    monkeypatch.delenv("BRAVE_API_KEY", raising=False)
-    monkeypatch.delenv("BRAVE_BASE_URL", raising=False)
-    monkeypatch.delenv("EXA_API_KEY", raising=False)
-    monkeypatch.delenv("EXA_BASE_URL", raising=False)
+    monkeypatch.setenv("TAVILY_API_KEY", "")
+    monkeypatch.setenv("TAVILY_BASE_URL", "https://api.tavily.com")
+    monkeypatch.setenv("BRAVE_SEARCH_API_KEY", "")
+    monkeypatch.setenv("BRAVE_API_KEY", "")
+    monkeypatch.setenv("BRAVE_BASE_URL", "https://api.search.brave.com/res/v1")
+    monkeypatch.setenv("EXA_API_KEY", "")
+    monkeypatch.setenv("EXA_BASE_URL", "https://api.exa.ai")
     clear_settings_cache()
     clear_provider_cache()
     clear_search_cache()
@@ -236,7 +238,7 @@ async def test_web_search_raises_connection_error(monkeypatch: pytest.MonkeyPatc
 @pytest.mark.asyncio
 @respx.mock
 async def test_web_search_raises_provider_not_configured(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.delenv("TAVILY_API_KEY", raising=False)
+    monkeypatch.setenv("TAVILY_API_KEY", "")
     monkeypatch.setenv("TAVILY_BASE_URL", "https://api.tavily.com")
 
     with pytest.raises(ToolError):
@@ -256,7 +258,7 @@ async def test_web_search_rejects_provider_options_without_matching_provider() -
 @pytest.mark.asyncio
 @respx.mock
 async def test_web_extract_raises_provider_not_configured(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.delenv("TAVILY_API_KEY", raising=False)
+    monkeypatch.setenv("TAVILY_API_KEY", "")
     monkeypatch.setenv("TAVILY_BASE_URL", "https://api.tavily.com")
 
     with pytest.raises(ToolError):
