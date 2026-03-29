@@ -185,11 +185,87 @@ async def test_exa_search_raises_not_configured_without_key(monkeypatch: pytest.
 
 
 @pytest.mark.asyncio
-async def test_exa_extract_is_reserved_but_not_implemented_yet() -> None:
+@respx.mock
+async def test_exa_extract_normalizes_content_results(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("EXA_API_KEY", "test-key")
+    monkeypatch.setenv("EXA_BASE_URL", "https://api.exa.ai")
+
+    respx.post("https://api.exa.ai/contents").mock(
+        return_value=Response(
+            200,
+            json={
+                "results": [
+                    {
+                        "title": "Model Context Protocol",
+                        "url": "https://modelcontextprotocol.io/docs/getting-started/intro",
+                        "text": "Page body",
+                        "highlights": ["chunk-1", "chunk-2"],
+                        "summary": "Summary text",
+                    }
+                ]
+            },
+        )
+    )
+
+    provider = ExaProvider()
+    response = await provider.extract(
+        ExtractRequest(
+            urls=["https://modelcontextprotocol.io/docs/getting-started/intro"],
+            provider="exa",
+            query="intro",
+            max_chunks=2,
+        )
+    )
+
+    assert response.provider == "exa"
+    assert response.mode == "content"
+    assert len(response.pages) == 1
+    assert response.pages[0].title == "Model Context Protocol"
+    assert response.pages[0].content == "Page body"
+    assert response.pages[0].excerpt == "chunk-1"
+    assert response.pages[0].chunks == ["chunk-1", "chunk-2"]
+    assert response.pages[0].raw is None
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_exa_extract_maps_supported_params(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("EXA_API_KEY", "test-key")
+    monkeypatch.setenv("EXA_BASE_URL", "https://api.exa.ai")
+
+    captured: dict[str, object] = {}
+
+    def handler(request: Request) -> Response:
+        captured["body"] = request.content.decode("utf-8")
+        return Response(200, json={"results": []})
+
+    respx.post("https://api.exa.ai/contents").mock(side_effect=handler)
+
+    provider = ExaProvider()
+    await provider.extract(
+        ExtractRequest(
+            urls=["https://example.com/page"],
+            provider="exa",
+            query="key findings",
+            max_chunks=3,
+        )
+    )
+
+    body = str(captured["body"])
+    assert '"urls":["https://example.com/page"]' in body
+    assert '"text":{"maxCharacters":6000}' in body
+    assert '"highlights":{"query":"key findings","maxCharacters":2400}' in body
+
+
+@pytest.mark.asyncio
+async def test_exa_extract_rejects_structured_mode_for_now(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("EXA_API_KEY", "test-key")
+    monkeypatch.setenv("EXA_BASE_URL", "https://api.exa.ai")
+
     provider = ExaProvider()
     with pytest.raises(ProviderError) as exc_info:
         await provider.extract(
-            ExtractRequest(urls=["https://example.com"], provider="exa")
+            ExtractRequest(urls=["https://example.com"], provider="exa", mode="structured")
         )
 
     assert exc_info.value.error_type == "provider_not_implemented"

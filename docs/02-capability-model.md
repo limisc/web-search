@@ -98,7 +98,7 @@ This table defines semantic lanes, not current implementation guarantees.
 
 | Provider | Capabilities | Current status |
 |---|---|---|
-| Exa | `authoritative_search`, `broad_search` | implemented for web search; extract still planned |
+| Exa | `authoritative_search`, `broad_search`, `content_extract` | implemented for web search and content extract |
 | Tavily | `broad_search`, `content_extract` | implemented |
 | Brave | `broad_search` | implemented for web search; freshness-specialized lanes still planned |
 | Firecrawl | `content_extract`, `structured_extract` | planned |
@@ -116,6 +116,11 @@ Because only part of the multi-provider graph is really implemented right now, a
 | `docs` | Exa-oriented lane later | Exa first when configured, then Brave or Tavily fallback |
 | `fresh` | Grok + Brave lane later | Brave or Tavily fallback, no news-specialized lane yet |
 | `social` | Grok-oriented lane later | Brave or Tavily fallback, no social-specialized lane yet |
+
+Current extract behavior is more limited:
+- `mode="content"` with `query` or `max_chunks` prefers Exa when configured, then falls back to Tavily
+- plain `mode="content"` still prefers Tavily, with Exa available as fallback when configured
+- `mode="structured"` does not have true structured extraction yet
 
 ---
 

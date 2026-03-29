@@ -4,7 +4,7 @@
 
 | Phase | Status | Core goal | Notes |
 |---|---|---|---|
-| V1 | in progress | unified interfaces + thin MCP + HTTP APIs + orchestrator skeleton | code already moved here, with Tavily plus Brave plus Exa web-search execution in place |
+| V1 | in progress | unified interfaces + thin MCP + HTTP APIs + orchestrator skeleton | code already moved here, with Tavily plus Brave plus Exa execution in place |
 | V1.5 | planned | verification + future monitoring building blocks | depends on basic multi-provider capabilities landing first |
 | V2 | planned | intelligent routing, ranking, cost-awareness, health-awareness | after V1.5 stabilizes |
 
@@ -18,6 +18,7 @@ Important reality checks:
 - Tavily-backed search and extract are implemented
 - Brave-backed web search is implemented
 - Exa-backed web search is implemented
+- Exa-backed content extract is implemented
 - names such as `balanced`, `high_reliability`, or `top-2` are roadmap semantics unless explicitly implemented
 - future monitoring is roadmap-only, not part of the current public surface
 - provider abstraction exists structurally, but most of its long-term value is still ahead of the codebase

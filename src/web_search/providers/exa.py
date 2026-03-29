@@ -10,7 +10,14 @@ import httpx
 from web_search.config import get_settings
 from web_search.logging import get_logger
 from web_search.models.requests import ExtractRequest, SearchRequest
-from web_search.models.responses import Citation, ExtractResponse, ResponseMeta, SearchHit, SearchResponse
+from web_search.models.responses import (
+    Citation,
+    ExtractResponse,
+    ExtractedPage,
+    ResponseMeta,
+    SearchHit,
+    SearchResponse,
+)
 from web_search.utils.errors import ProviderError
 
 
@@ -68,11 +75,47 @@ class ExaProvider:
         )
 
     async def extract(self, request: ExtractRequest) -> ExtractResponse:
-        raise ProviderError(
-            "Provider not implemented yet: exa extract",
+        self._ensure_configured()
+        if request.mode != "content":
+            raise ProviderError(
+                "Provider not implemented yet: exa structured extract",
+                provider=self.name,
+                error_type="provider_not_implemented",
+                details={"mode": request.mode},
+            )
+
+        started = time.perf_counter()
+        body = self._extract_body_for(request)
+
+        self.logger.info("provider_extract_started provider=%s url_count=%s", self.name, len(request.urls))
+        data = await self._post("/contents", body)
+        latency_ms = int((time.perf_counter() - started) * 1000)
+
+        pages = [
+            ExtractedPage(
+                url=item["url"],
+                title=item.get("title"),
+                content=self._extract_content_for(item),
+                excerpt=self._extract_excerpt_for(item),
+                chunks=self._extract_chunks_for(item, request),
+                provider=self.name,
+                raw=item if request.debug else None,
+            )
+            for item in self._extract_results(data)
+            if item.get("url")
+        ]
+        self.logger.info(
+            "provider_extract_finished provider=%s latency_ms=%s page_count=%s",
+            self.name,
+            latency_ms,
+            len(pages),
+        )
+
+        return ExtractResponse(
             provider=self.name,
-            error_type="provider_not_implemented",
-            details={"mode": request.mode},
+            mode=request.mode,
+            pages=pages,
+            meta=ResponseMeta(latency_ms=latency_ms, providers_used=[self.name]),
         )
 
     async def _post(self, path: str, body: dict[str, Any]) -> dict[str, Any]:
@@ -235,6 +278,32 @@ class ExaProvider:
             return [item for item in results if isinstance(item, dict)]
         return []
 
+    def _extract_body_for(self, request: ExtractRequest) -> dict[str, Any]:
+        body: dict[str, Any] = {
+            "urls": [str(url) for url in request.urls],
+            "text": self._extract_text_option_for(request),
+        }
+        if request.query:
+            body["highlights"] = self._extract_highlights_option_for(request)
+        return body
+
+    @staticmethod
+    def _extract_text_option_for(request: ExtractRequest) -> bool | dict[str, Any]:
+        if request.max_chunks:
+            return {"maxCharacters": request.max_chunks * 2000}
+        return True
+
+    @staticmethod
+    def _extract_highlights_option_for(request: ExtractRequest) -> dict[str, Any]:
+        highlights: dict[str, Any] = {"query": request.query or ""}
+        if request.max_chunks:
+            highlights["maxCharacters"] = request.max_chunks * 800
+        return highlights
+
+    @staticmethod
+    def _extract_results(data: dict[str, Any]) -> list[dict[str, Any]]:
+        return ExaProvider._results(data)
+
     @staticmethod
     def _answer_for(data: dict[str, Any]) -> str | None:
         output = data.get("output")
@@ -263,6 +332,10 @@ class ExaProvider:
     def _content_for(item: dict[str, Any], request: SearchRequest) -> str | None:
         if not request.extraction:
             return None
+        return ExaProvider._extract_content_for(item)
+
+    @staticmethod
+    def _extract_content_for(item: dict[str, Any]) -> str | None:
         text = item.get("text")
         if isinstance(text, str) and text.strip():
             return text.strip()
@@ -275,6 +348,36 @@ class ExaProvider:
         if isinstance(summary, str) and summary.strip():
             return summary.strip()
         return None
+
+    @staticmethod
+    def _extract_excerpt_for(item: dict[str, Any]) -> str | None:
+        highlights = item.get("highlights")
+        if isinstance(highlights, list):
+            for highlight in highlights:
+                if isinstance(highlight, str) and highlight.strip():
+                    return highlight.strip()
+        summary = item.get("summary")
+        if isinstance(summary, str) and summary.strip():
+            return summary.strip()[:280]
+        text = item.get("text")
+        if isinstance(text, str) and text.strip():
+            return text.strip()[:280]
+        return None
+
+    @staticmethod
+    def _extract_chunks_for(item: dict[str, Any], request: ExtractRequest) -> list[str]:
+        highlights = item.get("highlights")
+        if isinstance(highlights, list):
+            chunks = [value.strip() for value in highlights if isinstance(value, str) and value.strip()]
+            if request.max_chunks:
+                return chunks[: request.max_chunks]
+            return chunks
+        text = item.get("text")
+        if isinstance(text, str) and text.strip() and request.max_chunks:
+            max_chars = max(1, len(text) // request.max_chunks)
+            chunks = [segment.strip() for segment in (text[i : i + max_chars] for i in range(0, len(text), max_chars)) if segment.strip()]
+            return chunks[: request.max_chunks]
+        return []
 
     @staticmethod
     def _normalize_published_date(value: str | None) -> str | None:

@@ -34,20 +34,20 @@ Implemented today:
 - Tavily-backed extract
 - Brave-backed web search
 - Exa-backed web search
+- Exa-backed content extract
 - thin MCP facade
 - HTTP APIs
 - router / planner skeleton
 - query cache
 
 Not implemented yet:
-- Exa-backed extract
 - Firecrawl / Grok adapters
 - true multi-provider fan-out
 - true verification / agreement scoring
 - structured extraction execution
 - monitoring pipeline / scheduler integration / alerts
 
-So the repository is currently **orchestrator-shaped** with **Tavily + Brave + Exa search paths**, while broader routing and verification are still in progress.
+So the repository is currently **orchestrator-shaped** with **Tavily + Brave + Exa search paths** and **Tavily + Exa extract paths**, while broader routing and verification are still in progress.
 
 ---
 

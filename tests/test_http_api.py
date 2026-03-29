@@ -313,3 +313,112 @@ async def test_web_search_routes_docs_to_exa_when_configured(app, monkeypatch: p
     assert body["provider"] == "exa"
     assert body["meta"]["route"] == "fallback_candidate:low_cost"
     assert body["results"][0]["title"] == "Official MCP docs"
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_web_extract_returns_exa_success_when_overridden(app, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("EXA_API_KEY", "test-key")
+    monkeypatch.setenv("EXA_BASE_URL", "https://api.exa.ai")
+
+    respx.post("https://api.exa.ai/contents").mock(
+        return_value=Response(
+            200,
+            json={
+                "results": [
+                    {
+                        "title": "Exa Page",
+                        "url": "https://example.com/exa-page",
+                        "text": "Page body",
+                        "highlights": ["chunk-1", "chunk-2"],
+                    }
+                ]
+            },
+        )
+    )
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://testserver") as client:
+        response = await client.post(
+            "/api/web_extract",
+            json={
+                "urls": ["https://example.com/exa-page"],
+                "provider": "exa",
+                "mode": "content",
+                "query": "exa",
+                "max_chunks": 2,
+            },
+        )
+
+    body = response.json()
+    assert response.status_code == 200
+    assert body["provider"] == "exa"
+    assert body["meta"]["route"] == "provider_override"
+    assert body["pages"][0]["title"] == "Exa Page"
+    assert body["pages"][0]["chunks"] == ["chunk-1", "chunk-2"]
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_web_extract_routes_content_extract_to_exa_when_configured(app, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("EXA_API_KEY", "test-key")
+    monkeypatch.setenv("EXA_BASE_URL", "https://api.exa.ai")
+    monkeypatch.setenv("TAVILY_API_KEY", "tavily-key")
+    monkeypatch.setenv("TAVILY_BASE_URL", "https://api.tavily.com")
+
+    respx.post("https://api.exa.ai/contents").mock(
+        return_value=Response(
+            200,
+            json={
+                "results": [
+                    {
+                        "title": "Official MCP docs",
+                        "url": "https://modelcontextprotocol.io/docs/getting-started/intro",
+                        "text": "Page body",
+                        "highlights": ["chunk-1", "chunk-2"],
+                    }
+                ]
+            },
+        )
+    )
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://testserver") as client:
+        response = await client.post(
+            "/api/web_extract",
+            json={
+                "urls": ["https://modelcontextprotocol.io/docs/getting-started/intro"],
+                "mode": "content",
+                "query": "MCP intro",
+                "max_chunks": 2,
+            },
+        )
+
+    body = response.json()
+    assert response.status_code == 200
+    assert body["provider"] == "exa"
+    assert body["meta"]["route"] == "fallback_candidate"
+    assert body["pages"][0]["title"] == "Official MCP docs"
+
+
+@pytest.mark.asyncio
+async def test_web_extract_rejects_exa_structured_mode_for_now(app, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("EXA_API_KEY", "test-key")
+    monkeypatch.setenv("EXA_BASE_URL", "https://api.exa.ai")
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://testserver") as client:
+        response = await client.post(
+            "/api/web_extract",
+            json={
+                "urls": ["https://example.com/exa-page"],
+                "provider": "exa",
+                "mode": "structured",
+            },
+        )
+
+    assert response.status_code == 501
+    assert response.json() == {
+        "error": {
+            "type": "provider_not_implemented",
+            "message": "Provider not implemented yet: exa structured extract",
+            "provider": "exa",
+        }
+    }

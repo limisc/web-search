@@ -151,9 +151,11 @@ Unified known-URL extraction entrypoint.
 - `provider`: optional override
 
 ### Current implementation note
-- currently backed by Tavily Extract
+- Tavily-backed extract is implemented
+- Exa-backed extract is implemented for `mode="content"`
+- content extract requests with `query` or `max_chunks` now prefer Exa when configured, then fall back to Tavily
+- Exa extract currently maps `query` to provider-side highlights and uses those highlights as `chunks`
 - `mode=structured` is part of the contract, but true structured extraction is not implemented yet
-- provider-aware extract routing is not implemented yet
 
 ### Example
 ```bash

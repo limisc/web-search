@@ -182,6 +182,74 @@ async def test_web_extract_returns_normalized_pages(monkeypatch: pytest.MonkeyPa
 
 
 @pytest.mark.asyncio
+@respx.mock
+async def test_web_extract_supports_exa_provider_override(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("EXA_API_KEY", "test-key")
+    monkeypatch.setenv("EXA_BASE_URL", "https://api.exa.ai")
+
+    respx.post("https://api.exa.ai/contents").mock(
+        return_value=Response(
+            200,
+            json={
+                "results": [
+                    {
+                        "title": "Model Context Protocol",
+                        "url": "https://modelcontextprotocol.io/docs/getting-started/intro",
+                        "text": "Page body",
+                        "highlights": ["chunk-1", "chunk-2"],
+                    }
+                ]
+            },
+        )
+    )
+
+    result = await web_extract(
+        urls=["https://modelcontextprotocol.io/docs/getting-started/intro"],
+        provider="exa",
+        query="intro",
+        max_chunks=2,
+    )
+
+    assert result["provider"] == "exa"
+    assert result["pages"][0]["title"] == "Model Context Protocol"
+    assert result["pages"][0]["chunks"] == ["chunk-1", "chunk-2"]
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_web_extract_prefers_exa_for_content_extract_with_query(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("TAVILY_API_KEY", "tavily-key")
+    monkeypatch.setenv("TAVILY_BASE_URL", "https://api.tavily.com")
+    monkeypatch.setenv("EXA_API_KEY", "test-key")
+    monkeypatch.setenv("EXA_BASE_URL", "https://api.exa.ai")
+
+    respx.post("https://api.exa.ai/contents").mock(
+        return_value=Response(
+            200,
+            json={
+                "results": [
+                    {
+                        "title": "Model Context Protocol",
+                        "url": "https://modelcontextprotocol.io/docs/getting-started/intro",
+                        "text": "Page body",
+                        "highlights": ["chunk-1", "chunk-2"],
+                    }
+                ]
+            },
+        )
+    )
+
+    result = await web_extract(
+        urls=["https://modelcontextprotocol.io/docs/getting-started/intro"],
+        query="intro",
+        max_chunks=2,
+    )
+
+    assert result["provider"] == "exa"
+    assert result["pages"][0]["chunks"] == ["chunk-1", "chunk-2"]
+
+
+@pytest.mark.asyncio
 async def test_web_extract_raises_validation_error_for_invalid_url() -> None:
     with pytest.raises(MCPValidationError):
         await web_extract(urls=["not-a-url"])
