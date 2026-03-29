@@ -102,6 +102,28 @@ uv run ruff check .
 
 ---
 
+## Local development and dogfooding
+
+When developing this repository and also using its own search capability, do not run your day-to-day searches against the actively edited checkout.
+
+Use a stable local service from a separate git worktree and keep the current checkout for edits. A practical default is:
+- `dev`: current checkout for coding
+- `live`: `../web-search-live` for the stable callable instance on `127.0.0.1:8000`
+- optional `preview`: temporary instance from `dev` on `127.0.0.1:8001`
+
+Create the stable worktree once:
+```bash
+git worktree add --detach ../web-search-live HEAD
+```
+
+Then run the stable service from there over HTTP and keep routine usage pointed at it. This avoids file-watch churn and constant restarts while AI-driven edits are changing many files.
+
+The full workflow lives in:
+- `docs/06-development-workflow.md`
+- `AGENTS.md`
+
+---
+
 ## Documentation map
 
 Recommended reading order for future humans and AI agents:

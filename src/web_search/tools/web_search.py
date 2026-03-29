@@ -39,13 +39,13 @@ async def web_search(
         provider: Optional provider override for testing or forced routing.
     """
     try:
-        request = SearchRequest(
+        request = SearchRequest.from_tool_args(
             query=query,
             intent=intent,
             freshness=freshness,
-            domains=domains or [],
-            include_domains=include_domains or [],
-            exclude_domains=exclude_domains or [],
+            domains=domains,
+            include_domains=include_domains,
+            exclude_domains=exclude_domains,
             max_results=max_results,
             verification_level=verification_level,
             extraction=extraction,

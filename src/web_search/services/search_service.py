@@ -22,8 +22,9 @@ class SearchService:
         cache_key = make_cache_key("search", request.model_dump(mode="json"))
         cached = _SEARCH_CACHE.get(cache_key)
         if cached is not None:
-            cached.meta.cached = True
-            return cached
+            cached_copy = cached.model_copy(deep=True)
+            cached_copy.meta.cached = True
+            return cached_copy
 
         started = time.perf_counter()
         plan = self.router.plan(request)
@@ -43,7 +44,7 @@ class SearchService:
                 response.meta.providers_used = [provider_name]
                 response.meta.verification_level = request.verification_level
                 response.meta.latency_ms = int((time.perf_counter() - started) * 1000)
-                _SEARCH_CACHE.set(cache_key, response)
+                _SEARCH_CACHE.set(cache_key, response.model_copy(deep=True))
                 return response
             except ProviderError as exc:
                 last_error = exc
@@ -59,7 +60,6 @@ class SearchService:
             error_type="provider_not_available",
             details={"intent": request.intent, "providers": list(plan.search_providers)},
         )
-
 
 
 def clear_search_cache() -> None:

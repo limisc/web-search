@@ -94,9 +94,9 @@ Some of these already exist in code. The full HTTP + MCP normalization layer is 
 
 ## MCP mapping
 
-Target behavior:
-- MCP should preserve the same semantic error types
-- MCP transport may wrap them differently, but the meaning should remain aligned with the HTTP error vocabulary
+Current status:
+- MCP tool errors are already normalized by the tool layer
+- HTTP API errors are now normalized into the semantic error shape for validation, malformed JSON, and provider failures
 - future partial-success behavior should not be hidden as a full success or a full failure
 
 ---

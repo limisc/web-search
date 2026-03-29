@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Any, Literal, Sequence
 
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, model_validator
 
@@ -23,6 +23,38 @@ class SearchRequest(BaseModel):
     extraction: bool = False
     debug: bool = False
     provider: str | None = None
+
+    @classmethod
+    def from_tool_args(
+        cls,
+        *,
+        query: str,
+        intent: str = "general",
+        freshness: str | None = None,
+        domains: Sequence[str] | None = None,
+        include_domains: Sequence[str] | None = None,
+        exclude_domains: Sequence[str] | None = None,
+        max_results: int = 5,
+        verification_level: str = "none",
+        extraction: bool = False,
+        debug: bool = False,
+        provider: str | None = None,
+    ) -> "SearchRequest":
+        return cls.model_validate(
+            {
+                "query": query,
+                "intent": intent,
+                "freshness": freshness,
+                "domains": list(domains or []),
+                "include_domains": list(include_domains or []),
+                "exclude_domains": list(exclude_domains or []),
+                "max_results": max_results,
+                "verification_level": verification_level,
+                "extraction": extraction,
+                "debug": debug,
+                "provider": provider,
+            }
+        )
 
     @model_validator(mode="after")
     def normalize_domains(self) -> "SearchRequest":
@@ -52,6 +84,32 @@ class ExtractRequest(BaseModel):
     format: OutputFormat = "markdown"
     debug: bool = False
     provider: str | None = None
+
+    @classmethod
+    def from_tool_args(
+        cls,
+        *,
+        urls: Sequence[str],
+        mode: str = "content",
+        schema: dict[str, Any] | None = None,
+        query: str | None = None,
+        max_chunks: int | None = None,
+        format: str = "markdown",
+        debug: bool = False,
+        provider: str | None = None,
+    ) -> "ExtractRequest":
+        return cls.model_validate(
+            {
+                "urls": list(urls),
+                "mode": mode,
+                "schema": schema,
+                "query": query,
+                "max_chunks": max_chunks,
+                "format": format,
+                "debug": debug,
+                "provider": provider,
+            }
+        )
 
     @model_validator(mode="after")
     def normalize_query(self) -> "ExtractRequest":

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from fastmcp.exceptions import ToolError, ValidationError as MCPValidationError
 from pydantic import ValidationError
 
@@ -13,7 +15,7 @@ from web_search.utils.errors import ProviderError
 async def web_extract(
     urls: list[str],
     mode: str = "content",
-    schema: dict | None = None,
+    schema: dict[str, Any] | None = None,
     query: str | None = None,
     max_chunks: int | None = None,
     format: str = "markdown",
@@ -33,7 +35,7 @@ async def web_extract(
         provider: Optional provider override.
     """
     try:
-        request = ExtractRequest(
+        request = ExtractRequest.from_tool_args(
             urls=urls,
             mode=mode,
             schema=schema,

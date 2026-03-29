@@ -27,7 +27,6 @@ class TavilyProvider:
     def __init__(self) -> None:
         self.settings = get_settings()
         self.logger = get_logger(__name__)
-        self._client = httpx.AsyncClient(timeout=httpx.Timeout(self.settings.request_timeout_seconds))
 
     async def search(self, request: SearchRequest) -> SearchResponse:
         self._ensure_configured()
@@ -139,51 +138,53 @@ class TavilyProvider:
         base_url = self.settings.tavily_base_url.rstrip("/")
         last_error: Exception | None = None
         last_error_type = "provider_error"
+        timeout = httpx.Timeout(self.settings.request_timeout_seconds)
 
-        for attempt in range(1, self.settings.retry_max_attempts + 1):
-            try:
-                response = await self._client.post(f"{base_url}{path}", json=body, headers=headers)
-                response.raise_for_status()
-                self.logger.info(
-                    "provider_request_succeeded provider=%s path=%s status_code=%s attempt=%s",
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            for attempt in range(1, self.settings.retry_max_attempts + 1):
+                try:
+                    response = await client.post(f"{base_url}{path}", json=body, headers=headers)
+                    response.raise_for_status()
+                    self.logger.info(
+                        "provider_request_succeeded provider=%s path=%s status_code=%s attempt=%s",
+                        self.name,
+                        path,
+                        response.status_code,
+                        attempt,
+                    )
+                    return response.json()
+                except httpx.TimeoutException as exc:
+                    last_error = exc
+                    last_error_type = "provider_timeout"
+                except httpx.ConnectError as exc:
+                    last_error = exc
+                    last_error_type = "provider_connection_error"
+                except httpx.HTTPStatusError as exc:
+                    status = exc.response.status_code
+                    if status == 429 or status in {502, 503, 504}:
+                        last_error = exc
+                        last_error_type = "provider_unavailable"
+                    else:
+                        raise ProviderError(
+                            f"Tavily returned HTTP {status}",
+                            provider=self.name,
+                            error_type="provider_http_error",
+                            details={"status_code": status, "attempt": attempt},
+                        ) from exc
+                except httpx.HTTPError as exc:
+                    last_error = exc
+                    last_error_type = "provider_connection_error"
+
+                self.logger.warning(
+                    "provider_request_retry provider=%s path=%s attempt=%s error_type=%s error=%s",
                     self.name,
                     path,
-                    response.status_code,
                     attempt,
+                    last_error_type,
+                    last_error,
                 )
-                return response.json()
-            except httpx.TimeoutException as exc:
-                last_error = exc
-                last_error_type = "provider_timeout"
-            except httpx.ConnectError as exc:
-                last_error = exc
-                last_error_type = "provider_connection_error"
-            except httpx.HTTPStatusError as exc:
-                status = exc.response.status_code
-                if status == 429 or status in {502, 503, 504}:
-                    last_error = exc
-                    last_error_type = "provider_unavailable"
-                else:
-                    raise ProviderError(
-                        f"Tavily returned HTTP {status}",
-                        provider=self.name,
-                        error_type="provider_http_error",
-                        details={"status_code": status, "attempt": attempt},
-                    ) from exc
-            except httpx.HTTPError as exc:
-                last_error = exc
-                last_error_type = "provider_connection_error"
-
-            self.logger.warning(
-                "provider_request_retry provider=%s path=%s attempt=%s error_type=%s error=%s",
-                self.name,
-                path,
-                attempt,
-                last_error_type,
-                last_error,
-            )
-            if attempt < self.settings.retry_max_attempts:
-                await asyncio.sleep(0.25 * attempt)
+                if attempt < self.settings.retry_max_attempts:
+                    await asyncio.sleep(0.25 * attempt)
 
         self.logger.error(
             "provider_request_failed provider=%s path=%s error_type=%s attempts=%s error=%s",

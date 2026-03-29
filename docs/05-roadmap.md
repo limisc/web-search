@@ -70,7 +70,7 @@ Goal: stabilize the public contract, HTTP API, MCP thin facade, and router/plann
 - [ ] Brave adapter
 - [ ] Firecrawl adapter
 - [ ] provider capability matrix finalized
-- [ ] HTTP API integration tests
+- [x] HTTP API integration tests
 - [ ] URL content cache
 
 ### V1 Definition of Done

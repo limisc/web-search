@@ -42,6 +42,74 @@ Update:
 
 ---
 
+## Local dogfooding workflow
+
+This repository is expected to be used while it is still being developed.
+
+When coding here and also relying on this project's own search or extract capability, use a stable-service workflow:
+- keep a separate stable checkout or git worktree for the callable service
+- do active edits in the current checkout
+- point routine search and extract usage at the stable service, not the actively edited checkout
+- avoid watch-mode reload and file-by-file auto-restart as the default workflow
+- AI-driven edits often touch many files at once, so restart only after a logical batch is ready
+
+Recommended shape:
+- `dev`: current checkout where edits happen
+- `live`: separate worktree, usually `../web-search-live`, serving the stable local instance on `127.0.0.1:8000`
+- optional `preview`: temporary instance from `dev`, usually on `127.0.0.1:8001`, for validating a batch before promotion
+
+Create the stable worktree once:
+```bash
+git worktree add --detach ../web-search-live HEAD
+```
+
+Start the stable HTTP service from the live worktree:
+```bash
+cd ../web-search-live
+cp .env.example .env
+# then set TAVILY_API_KEY in .env
+uv sync --extra dev
+uv run python -m web_search.app --transport http --host 127.0.0.1 --port 8000 --path /mcp
+```
+
+Use that stable instance for local dogfooding, for example:
+```bash
+curl -X POST http://127.0.0.1:8000/api/web_search \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "query": "Model Context Protocol authorization",
+    "intent": "general",
+    "max_results": 3
+  }'
+```
+
+Keep making code changes in `dev`.
+After a logical batch is ready, validate there with:
+```bash
+uv run pytest -q
+uv run ruff check .
+```
+
+If runtime validation is needed before promotion, start a temporary preview instance from `dev`:
+```bash
+uv run python -m web_search.app --transport http --host 127.0.0.1 --port 8001 --path /mcp
+```
+
+Only after the batch looks good should it be promoted to `live`, followed by a manual restart of the live service.
+
+Prefer HTTP over stdio for local dogfooding because one stable HTTP process can serve both the REST API and MCP-over-HTTP callers. Use stdio only when a caller explicitly requires it.
+
+## Code quality rules
+
+When editing Python in this repository, keep these rules:
+- validate external inputs at the edge, then pass typed request models through the service layer
+- if tool-layer inputs are wider than model field types, add an explicit adapter or factory method instead of scattering coercion or broad casts through the code
+- do not add `Any` or `cast(...)` just to suppress type checker complaints when the boundary can be modeled properly
+- avoid mutating cached response objects after they are stored; copy them before adding request-specific metadata such as cache-hit markers
+- keep network client lifecycles explicit; if a client is long-lived, wire startup and shutdown cleanly, otherwise keep it request-scoped
+- add or update tests in the same batch as behavior changes
+- keep docs and implementation aligned; if runtime reality changes, update the focused docs in the same PR
+
 ## Validation steps
 
 Before considering a change complete, run:
