@@ -185,29 +185,26 @@ async def test_firecrawl_search_is_reserved_but_not_implemented_yet() -> None:
 
 @pytest.mark.asyncio
 @respx.mock
-async def test_firecrawl_structured_extract_normalizes_completed_job(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_firecrawl_structured_extract_normalizes_scrape_json_mode(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("FIRECRAWL_API_KEY", "test-key")
     monkeypatch.setenv("FIRECRAWL_BASE_URL", "https://api.firecrawl.dev/v2")
 
     captured: dict[str, object] = {}
 
-    def start_handler(request: Request) -> Response:
-        captured["start_body"] = request.content.decode("utf-8")
-        return Response(200, json={"success": True, "id": "job-123", "status": "processing"})
-
-    def status_handler(request: Request) -> Response:
-        captured["status_method"] = request.method
+    def scrape_handler(request: Request) -> Response:
+        captured["body"] = request.content.decode("utf-8")
         return Response(
             200,
             json={
                 "success": True,
-                "status": "completed",
-                "data": {"company": {"name": "Firecrawl", "supports_sso": True}},
+                "data": {
+                    "json": {"company": {"name": "Firecrawl", "supports_sso": True}},
+                    "metadata": {"sourceURL": "https://firecrawl.dev"},
+                },
             },
         )
 
-    respx.post("https://api.firecrawl.dev/v2/extract").mock(side_effect=start_handler)
-    respx.get("https://api.firecrawl.dev/v2/extract/job-123").mock(side_effect=status_handler)
+    respx.post("https://api.firecrawl.dev/v2/scrape").mock(side_effect=scrape_handler)
 
     provider = FirecrawlProvider()
     response = await provider.extract(
@@ -233,11 +230,11 @@ async def test_firecrawl_structured_extract_normalizes_completed_job(monkeypatch
         )
     )
 
-    start_body = str(captured["start_body"])
-    assert '"urls":["https://firecrawl.dev/"]' in start_body
-    assert '"prompt":"Extract company info"' in start_body
-    assert '"schema":{' in start_body
-    assert captured["status_method"] == "GET"
+    body = str(captured["body"])
+    assert '"url":"https://firecrawl.dev/"' in body
+    assert '"formats":[{"type":"json"' in body
+    assert '"prompt":"Extract company info"' in body
+    assert '"schema":{' in body
     assert response.provider == "firecrawl"
     assert response.mode == "structured"
     assert response.pages == []

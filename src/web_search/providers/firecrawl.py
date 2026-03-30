@@ -79,18 +79,41 @@ class FirecrawlProvider:
             )
 
         started = time.perf_counter()
-        started_job = await self._request("POST", "/extract", json_body=self._structured_extract_body_for(request))
-        completed_job = await self._poll_extract_job(started_job)
-        latency_ms = int((time.perf_counter() - started) * 1000)
-        structured_data = completed_job.get("data")
-        if not isinstance(structured_data, (dict, list)):
+        structured_items: list[dict[str, Any]] = []
+        for url in request.urls:
+            url_str = str(url)
+            data = await self._request("POST", "/scrape", json_body=self._structured_scrape_body_for(url_str, request))
+            item = self._extract_page(data)
+            if item is None:
+                continue
+            structured_value = self._structured_value_for(item)
+            if structured_value is None:
+                raise ProviderError(
+                    "Firecrawl scrape completed without structured data",
+                    provider=self.name,
+                    error_type="provider_unavailable",
+                    details={"url": url_str, "response": data},
+                )
+            if len(request.urls) == 1:
+                structured_items.append({"data": structured_value})
+            else:
+                structured_items.append({"url": self._page_url_for(item, url_str), "data": structured_value})
+
+        if not structured_items:
             raise ProviderError(
-                "Firecrawl extract completed without structured data",
+                "Firecrawl scrape completed without structured data",
                 provider=self.name,
                 error_type="provider_unavailable",
-                details={"response": completed_job},
+                details={"urls": [str(url) for url in request.urls]},
             )
 
+        structured_data: dict[str, Any] | list[Any]
+        if len(request.urls) == 1:
+            structured_data = structured_items[0]["data"]
+        else:
+            structured_data = structured_items
+
+        latency_ms = int((time.perf_counter() - started) * 1000)
         self.logger.info("provider_extract_finished provider=%s latency_ms=%s page_count=0", self.name, latency_ms)
         return ExtractResponse(
             provider=self.name,
@@ -98,49 +121,6 @@ class FirecrawlProvider:
             pages=[],
             structured_data=structured_data,
             meta=ResponseMeta(latency_ms=latency_ms, providers_used=[self.name]),
-        )
-
-    async def _poll_extract_job(self, started_job: dict[str, Any]) -> dict[str, Any]:
-        status = started_job.get("status")
-        if status == "completed":
-            return started_job
-
-        job_id = started_job.get("id")
-        if not isinstance(job_id, str) or not job_id:
-            raise ProviderError(
-                "Firecrawl extract did not return a job id",
-                provider=self.name,
-                error_type="provider_unavailable",
-                details={"response": started_job},
-            )
-
-        deadline = time.perf_counter() + self.settings.request_timeout_seconds
-        while time.perf_counter() < deadline:
-            await asyncio.sleep(1)
-            job = await self._request("GET", f"/extract/{job_id}")
-            status = job.get("status")
-            if status == "completed":
-                return job
-            if status == "failed":
-                raise ProviderError(
-                    "Firecrawl extract job failed",
-                    provider=self.name,
-                    error_type="provider_unavailable",
-                    details={"job_id": job_id, "response": job},
-                )
-            if status == "cancelled":
-                raise ProviderError(
-                    "Firecrawl extract job was cancelled",
-                    provider=self.name,
-                    error_type="provider_unavailable",
-                    details={"job_id": job_id, "response": job},
-                )
-
-        raise ProviderError(
-            "Firecrawl extract job timed out",
-            provider=self.name,
-            error_type="provider_timeout",
-            details={"job_id": job_id},
         )
 
     async def _request(
@@ -249,20 +229,17 @@ class FirecrawlProvider:
         return body
 
     @staticmethod
-    def _structured_extract_body_for(request: ExtractRequest) -> dict[str, Any]:
-        body: dict[str, Any] = {
-            "urls": [str(url) for url in request.urls],
-            "prompt": request.query or "Extract structured data from these pages.",
-            "enableWebSearch": False,
-            "showSources": False,
-            "scrapeOptions": {
-                "formats": ["markdown"],
-                "onlyMainContent": True,
-            },
-            "ignoreInvalidURLs": True,
-        }
+    def _structured_scrape_body_for(url: str, request: ExtractRequest) -> dict[str, Any]:
+        structured_format: dict[str, Any] = {"type": "json"}
         if request.extraction_schema is not None:
-            body["schema"] = request.extraction_schema
+            structured_format["schema"] = request.extraction_schema
+        if request.query is not None:
+            structured_format["prompt"] = request.query
+        body: dict[str, Any] = {
+            "url": url,
+            "formats": [structured_format],
+            "onlyMainContent": True,
+        }
         return body
 
     @staticmethod
@@ -270,6 +247,13 @@ class FirecrawlProvider:
         payload = data.get("data")
         if isinstance(payload, dict):
             return payload
+        return None
+
+    @staticmethod
+    def _structured_value_for(item: dict[str, Any]) -> dict[str, Any] | list[Any] | None:
+        structured_value = item.get("json")
+        if isinstance(structured_value, (dict, list)):
+            return structured_value
         return None
 
     @staticmethod

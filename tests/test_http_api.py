@@ -500,16 +500,15 @@ async def test_web_extract_routes_structured_extract_to_firecrawl_by_default(app
     monkeypatch.setenv("TAVILY_API_KEY", "tavily-key")
     monkeypatch.setenv("TAVILY_BASE_URL", "https://api.tavily.com")
 
-    respx.post("https://api.firecrawl.dev/v2/extract").mock(
-        return_value=Response(200, json={"success": True, "id": "job-123", "status": "processing"})
-    )
-    respx.get("https://api.firecrawl.dev/v2/extract/job-123").mock(
+    respx.post("https://api.firecrawl.dev/v2/scrape").mock(
         return_value=Response(
             200,
             json={
                 "success": True,
-                "status": "completed",
-                "data": {"company": {"name": "Firecrawl", "supports_sso": True}},
+                "data": {
+                    "json": {"company": {"name": "Firecrawl", "supports_sso": True}},
+                    "metadata": {"sourceURL": "https://firecrawl.dev"},
+                },
             },
         )
     )
@@ -552,16 +551,15 @@ async def test_web_extract_returns_firecrawl_structured_success_when_overridden(
     monkeypatch.setenv("FIRECRAWL_API_KEY", "test-key")
     monkeypatch.setenv("FIRECRAWL_BASE_URL", "https://api.firecrawl.dev/v2")
 
-    respx.post("https://api.firecrawl.dev/v2/extract").mock(
-        return_value=Response(200, json={"success": True, "id": "job-123", "status": "processing"})
-    )
-    respx.get("https://api.firecrawl.dev/v2/extract/job-123").mock(
+    respx.post("https://api.firecrawl.dev/v2/scrape").mock(
         return_value=Response(
             200,
             json={
                 "success": True,
-                "status": "completed",
-                "data": {"company": {"name": "Firecrawl", "supports_sso": True}},
+                "data": {
+                    "json": {"company": {"name": "Firecrawl", "supports_sso": True}},
+                    "metadata": {"sourceURL": "https://firecrawl.dev"},
+                },
             },
         )
     )

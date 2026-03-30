@@ -20,6 +20,7 @@ Important reality checks:
 - Exa-backed web search is implemented
 - Exa-backed content extract is implemented
 - Firecrawl-backed structured extract is in the default route, and Firecrawl-backed content extract is available by provider override
+- current structured extract is implemented with Firecrawl `/scrape` JSON mode for known URLs to keep cost aligned with page-level extraction
 - names such as `balanced`, `high_reliability`, or `top-2` are roadmap semantics unless explicitly implemented
 - future monitoring is roadmap-only, not part of the current public surface
 - provider abstraction exists structurally, but most of its long-term value is still ahead of the codebase
