@@ -19,6 +19,8 @@ def clear_caches(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("BRAVE_BASE_URL", "https://api.search.brave.com/res/v1")
     monkeypatch.setenv("EXA_API_KEY", "")
     monkeypatch.setenv("EXA_BASE_URL", "https://api.exa.ai")
+    monkeypatch.setenv("FIRECRAWL_API_KEY", "")
+    monkeypatch.setenv("FIRECRAWL_BASE_URL", "https://api.firecrawl.dev/v2")
     clear_settings_cache()
     clear_provider_cache()
     clear_search_cache()
@@ -136,6 +138,30 @@ async def test_web_search_returns_provider_not_configured_when_key_missing(app, 
         "error": {
             "type": "provider_not_configured",
             "message": "TAVILY_API_KEY is not configured",
+            "provider": "tavily",
+        }
+    }
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_web_search_returns_budget_exceeded_for_tavily_rate_limit(app, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("TAVILY_API_KEY", "test-key")
+    monkeypatch.setenv("TAVILY_BASE_URL", "https://api.tavily.com")
+
+    respx.post("https://api.tavily.com/search").mock(return_value=Response(429, json={"error": "rate limited"}))
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://testserver") as client:
+        response = await client.post(
+            "/api/web_search",
+            json={"query": "hello"},
+        )
+
+    assert response.status_code == 429
+    assert response.json() == {
+        "error": {
+            "type": "budget_exceeded",
+            "message": "Tavily rate limit exceeded",
             "provider": "tavily",
         }
     }
@@ -420,5 +446,256 @@ async def test_web_extract_rejects_exa_structured_mode_for_now(app, monkeypatch:
             "type": "provider_not_implemented",
             "message": "Provider not implemented yet: exa structured extract",
             "provider": "exa",
+        }
+    }
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_web_extract_returns_firecrawl_success_when_overridden(app, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("FIRECRAWL_API_KEY", "test-key")
+    monkeypatch.setenv("FIRECRAWL_BASE_URL", "https://api.firecrawl.dev/v2")
+
+    respx.post("https://api.firecrawl.dev/v2/scrape").mock(
+        return_value=Response(
+            200,
+            json={
+                "success": True,
+                "data": {
+                    "markdown": "Paragraph one\n\nParagraph two with MCP details",
+                    "metadata": {
+                        "title": "Model Context Protocol",
+                        "sourceURL": "https://modelcontextprotocol.io/docs/getting-started/intro",
+                    },
+                },
+            },
+        )
+    )
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://testserver") as client:
+        response = await client.post(
+            "/api/web_extract",
+            json={
+                "urls": ["https://modelcontextprotocol.io/docs/getting-started/intro"],
+                "provider": "firecrawl",
+                "mode": "content",
+                "query": "MCP details",
+                "max_chunks": 1,
+            },
+        )
+
+    body = response.json()
+    assert response.status_code == 200
+    assert body["provider"] == "firecrawl"
+    assert body["meta"]["route"] == "provider_override"
+    assert body["pages"][0]["title"] == "Model Context Protocol"
+    assert body["pages"][0]["chunks"] == ["Paragraph two with MCP details"]
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_web_extract_routes_structured_extract_to_firecrawl_by_default(app, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("FIRECRAWL_API_KEY", "test-key")
+    monkeypatch.setenv("FIRECRAWL_BASE_URL", "https://api.firecrawl.dev/v2")
+    monkeypatch.setenv("TAVILY_API_KEY", "tavily-key")
+    monkeypatch.setenv("TAVILY_BASE_URL", "https://api.tavily.com")
+
+    respx.post("https://api.firecrawl.dev/v2/extract").mock(
+        return_value=Response(200, json={"success": True, "id": "job-123", "status": "processing"})
+    )
+    respx.get("https://api.firecrawl.dev/v2/extract/job-123").mock(
+        return_value=Response(
+            200,
+            json={
+                "success": True,
+                "status": "completed",
+                "data": {"company": {"name": "Firecrawl", "supports_sso": True}},
+            },
+        )
+    )
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://testserver") as client:
+        response = await client.post(
+            "/api/web_extract",
+            json={
+                "urls": ["https://firecrawl.dev"],
+                "mode": "structured",
+                "query": "Extract company info",
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        "company": {
+                            "type": "object",
+                            "properties": {
+                                "name": {"type": "string"},
+                                "supports_sso": {"type": "boolean"}
+                            },
+                            "required": ["name", "supports_sso"]
+                        }
+                    },
+                    "required": ["company"]
+                }
+            },
+        )
+
+    body = response.json()
+    assert response.status_code == 200
+    assert body["provider"] == "firecrawl"
+    assert body["meta"]["route"] == "single"
+    assert body["mode"] == "structured"
+    assert body["structured_data"] == {"company": {"name": "Firecrawl", "supports_sso": True}}
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_web_extract_returns_firecrawl_structured_success_when_overridden(app, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("FIRECRAWL_API_KEY", "test-key")
+    monkeypatch.setenv("FIRECRAWL_BASE_URL", "https://api.firecrawl.dev/v2")
+
+    respx.post("https://api.firecrawl.dev/v2/extract").mock(
+        return_value=Response(200, json={"success": True, "id": "job-123", "status": "processing"})
+    )
+    respx.get("https://api.firecrawl.dev/v2/extract/job-123").mock(
+        return_value=Response(
+            200,
+            json={
+                "success": True,
+                "status": "completed",
+                "data": {"company": {"name": "Firecrawl", "supports_sso": True}},
+            },
+        )
+    )
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://testserver") as client:
+        response = await client.post(
+            "/api/web_extract",
+            json={
+                "urls": ["https://firecrawl.dev"],
+                "provider": "firecrawl",
+                "mode": "structured",
+                "query": "Extract company info",
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        "company": {
+                            "type": "object",
+                            "properties": {
+                                "name": {"type": "string"},
+                                "supports_sso": {"type": "boolean"}
+                            },
+                            "required": ["name", "supports_sso"]
+                        }
+                    },
+                    "required": ["company"]
+                }
+            },
+        )
+
+    body = response.json()
+    assert response.status_code == 200
+    assert body["provider"] == "firecrawl"
+    assert body["mode"] == "structured"
+    assert body["structured_data"] == {"company": {"name": "Firecrawl", "supports_sso": True}}
+
+
+@pytest.mark.asyncio
+async def test_web_extract_returns_firecrawl_not_configured_for_default_structured_route(app, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("FIRECRAWL_API_KEY", "")
+    monkeypatch.setenv("FIRECRAWL_BASE_URL", "https://api.firecrawl.dev/v2")
+    monkeypatch.setenv("TAVILY_API_KEY", "tavily-key")
+    monkeypatch.setenv("TAVILY_BASE_URL", "https://api.tavily.com")
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://testserver") as client:
+        response = await client.post(
+            "/api/web_extract",
+            json={
+                "urls": ["https://example.com/firecrawl-page"],
+                "mode": "structured",
+                "query": "Extract fields"
+            },
+        )
+
+    assert response.status_code == 503
+    assert response.json() == {
+        "error": {
+            "type": "provider_not_configured",
+            "message": "FIRECRAWL_API_KEY is not configured",
+            "provider": "firecrawl",
+        }
+    }
+
+
+@pytest.mark.asyncio
+async def test_web_extract_rejects_firecrawl_structured_without_schema_or_query(app, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("FIRECRAWL_API_KEY", "test-key")
+    monkeypatch.setenv("FIRECRAWL_BASE_URL", "https://api.firecrawl.dev/v2")
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://testserver") as client:
+        response = await client.post(
+            "/api/web_extract",
+            json={
+                "urls": ["https://example.com/firecrawl-page"],
+                "provider": "firecrawl",
+                "mode": "structured",
+            },
+        )
+
+    assert response.status_code == 400
+    assert response.json() == {
+        "error": {
+            "type": "invalid_request",
+            "message": "Structured extract requires a schema or query",
+            "provider": "firecrawl",
+        }
+    }
+
+
+@pytest.mark.asyncio
+async def test_web_extract_rejects_tavily_structured_mode_when_overridden(app, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("TAVILY_API_KEY", "test-key")
+    monkeypatch.setenv("TAVILY_BASE_URL", "https://api.tavily.com")
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://testserver") as client:
+        response = await client.post(
+            "/api/web_extract",
+            json={
+                "urls": ["https://example.com/tavily-page"],
+                "provider": "tavily",
+                "mode": "structured",
+                "query": "Extract fields"
+            },
+        )
+
+    assert response.status_code == 501
+    assert response.json() == {
+        "error": {
+            "type": "provider_not_implemented",
+            "message": "Provider not implemented yet: tavily structured extract",
+            "provider": "tavily",
+        }
+    }
+
+
+@pytest.mark.asyncio
+async def test_web_extract_returns_firecrawl_not_configured_when_key_missing(app, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("FIRECRAWL_API_KEY", "")
+    monkeypatch.setenv("FIRECRAWL_BASE_URL", "https://api.firecrawl.dev/v2")
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://testserver") as client:
+        response = await client.post(
+            "/api/web_extract",
+            json={
+                "urls": ["https://example.com/firecrawl-page"],
+                "provider": "firecrawl",
+                "mode": "content",
+            },
+        )
+
+    assert response.status_code == 503
+    assert response.json() == {
+        "error": {
+            "type": "provider_not_configured",
+            "message": "FIRECRAWL_API_KEY is not configured",
+            "provider": "firecrawl",
         }
     }

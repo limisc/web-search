@@ -35,19 +35,22 @@ Implemented today:
 - Brave-backed web search
 - Exa-backed web search
 - Exa-backed content extract
+- Firecrawl-backed content extract with provider override
+- Firecrawl-backed structured extract
 - thin MCP facade
 - HTTP APIs
 - router / planner skeleton
 - query cache
 
 Not implemented yet:
-- Firecrawl / Grok adapters
+- Firecrawl-backed search
+- default-routed Firecrawl content extract lane
+- Grok adapters
 - true multi-provider fan-out
 - true verification / agreement scoring
-- structured extraction execution
 - monitoring pipeline / scheduler integration / alerts
 
-So the repository is currently **orchestrator-shaped** with **Tavily + Brave + Exa search paths** and **Tavily + Exa extract paths**, while broader routing and verification are still in progress.
+So the repository is currently **orchestrator-shaped** with **Tavily + Brave + Exa search paths** and **Tavily + Exa + Firecrawl extract paths**, while broader routing and verification are still in progress.
 
 ---
 
@@ -71,6 +74,7 @@ cp .env.example .env
 # then edit .env and set TAVILY_API_KEY
 # optionally set BRAVE_SEARCH_API_KEY for Brave web search
 # optionally set EXA_API_KEY for Exa web search
+# optionally set FIRECRAWL_API_KEY for Firecrawl extract
 ```
 
 ### 2. Create virtualenv and install
@@ -136,6 +140,7 @@ cp .env.example .env
 # then set TAVILY_API_KEY in .env
 # optionally set BRAVE_SEARCH_API_KEY in .env
 # optionally set EXA_API_KEY in .env
+# optionally set FIRECRAWL_API_KEY in .env
 uv sync --extra dev
 ./scripts/local_service.sh start live
 ```
@@ -211,6 +216,7 @@ src/web_search/
     base.py
     brave.py
     exa.py
+    firecrawl.py
     tavily.py
   models/
     requests.py

@@ -5,6 +5,7 @@ from functools import lru_cache
 from web_search.providers.base import SearchProvider
 from web_search.providers.brave import BraveProvider
 from web_search.providers.exa import ExaProvider
+from web_search.providers.firecrawl import FirecrawlProvider
 from web_search.providers.tavily import TavilyProvider
 from web_search.utils.errors import ProviderError
 
@@ -12,8 +13,9 @@ _PROVIDER_FACTORIES = {
     "tavily": TavilyProvider,
     "brave": BraveProvider,
     "exa": ExaProvider,
+    "firecrawl": FirecrawlProvider,
 }
-_OPTIONAL_PROVIDER_NAMES = {"firecrawl", "grok"}
+_OPTIONAL_PROVIDER_NAMES = {"grok"}
 
 
 @lru_cache(maxsize=None)

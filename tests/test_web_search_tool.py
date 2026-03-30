@@ -21,6 +21,8 @@ def clear_caches(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("BRAVE_BASE_URL", "https://api.search.brave.com/res/v1")
     monkeypatch.setenv("EXA_API_KEY", "")
     monkeypatch.setenv("EXA_BASE_URL", "https://api.exa.ai")
+    monkeypatch.setenv("FIRECRAWL_API_KEY", "")
+    monkeypatch.setenv("FIRECRAWL_BASE_URL", "https://api.firecrawl.dev/v2")
     clear_settings_cache()
     clear_provider_cache()
     clear_search_cache()
@@ -247,6 +249,147 @@ async def test_web_extract_prefers_exa_for_content_extract_with_query(monkeypatc
 
     assert result["provider"] == "exa"
     assert result["pages"][0]["chunks"] == ["chunk-1", "chunk-2"]
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_web_extract_supports_firecrawl_provider_override(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("FIRECRAWL_API_KEY", "test-key")
+    monkeypatch.setenv("FIRECRAWL_BASE_URL", "https://api.firecrawl.dev/v2")
+
+    respx.post("https://api.firecrawl.dev/v2/scrape").mock(
+        return_value=Response(
+            200,
+            json={
+                "success": True,
+                "data": {
+                    "markdown": "Paragraph one\n\nParagraph two with MCP details",
+                    "metadata": {
+                        "title": "Model Context Protocol",
+                        "sourceURL": "https://modelcontextprotocol.io/docs/getting-started/intro",
+                    },
+                },
+            },
+        )
+    )
+
+    result = await web_extract(
+        urls=["https://modelcontextprotocol.io/docs/getting-started/intro"],
+        provider="firecrawl",
+        query="MCP details",
+        max_chunks=1,
+    )
+
+    assert result["provider"] == "firecrawl"
+    assert result["pages"][0]["title"] == "Model Context Protocol"
+    assert result["pages"][0]["chunks"] == ["Paragraph two with MCP details"]
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_web_extract_routes_structured_extract_to_firecrawl_by_default(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("FIRECRAWL_API_KEY", "test-key")
+    monkeypatch.setenv("FIRECRAWL_BASE_URL", "https://api.firecrawl.dev/v2")
+    monkeypatch.setenv("TAVILY_API_KEY", "tavily-key")
+    monkeypatch.setenv("TAVILY_BASE_URL", "https://api.tavily.com")
+
+    respx.post("https://api.firecrawl.dev/v2/extract").mock(
+        return_value=Response(200, json={"success": True, "id": "job-123", "status": "processing"})
+    )
+    respx.get("https://api.firecrawl.dev/v2/extract/job-123").mock(
+        return_value=Response(
+            200,
+            json={
+                "success": True,
+                "status": "completed",
+                "data": {"company": {"name": "Firecrawl", "supports_sso": True}},
+            },
+        )
+    )
+
+    result = await web_extract(
+        urls=["https://firecrawl.dev"],
+        mode="structured",
+        query="Extract company info",
+        schema={
+            "type": "object",
+            "properties": {
+                "company": {
+                    "type": "object",
+                    "properties": {
+                        "name": {"type": "string"},
+                        "supports_sso": {"type": "boolean"}
+                    },
+                    "required": ["name", "supports_sso"]
+                }
+            },
+            "required": ["company"]
+        },
+    )
+
+    assert result["provider"] == "firecrawl"
+    assert result["mode"] == "structured"
+    assert result["structured_data"] == {"company": {"name": "Firecrawl", "supports_sso": True}}
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_web_extract_supports_firecrawl_structured_provider_override(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("FIRECRAWL_API_KEY", "test-key")
+    monkeypatch.setenv("FIRECRAWL_BASE_URL", "https://api.firecrawl.dev/v2")
+
+    respx.post("https://api.firecrawl.dev/v2/extract").mock(
+        return_value=Response(200, json={"success": True, "id": "job-123", "status": "processing"})
+    )
+    respx.get("https://api.firecrawl.dev/v2/extract/job-123").mock(
+        return_value=Response(
+            200,
+            json={
+                "success": True,
+                "status": "completed",
+                "data": {"company": {"name": "Firecrawl", "supports_sso": True}},
+            },
+        )
+    )
+
+    result = await web_extract(
+        urls=["https://firecrawl.dev"],
+        provider="firecrawl",
+        mode="structured",
+        query="Extract company info",
+        schema={
+            "type": "object",
+            "properties": {
+                "company": {
+                    "type": "object",
+                    "properties": {
+                        "name": {"type": "string"},
+                        "supports_sso": {"type": "boolean"}
+                    },
+                    "required": ["name", "supports_sso"]
+                }
+            },
+            "required": ["company"]
+        },
+    )
+
+    assert result["provider"] == "firecrawl"
+    assert result["mode"] == "structured"
+    assert result["structured_data"] == {"company": {"name": "Firecrawl", "supports_sso": True}}
+
+
+@pytest.mark.asyncio
+async def test_web_extract_raises_tool_error_for_tavily_structured_override(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("TAVILY_API_KEY", "test-key")
+    monkeypatch.setenv("TAVILY_BASE_URL", "https://api.tavily.com")
+
+    with pytest.raises(ToolError):
+        await web_extract(
+            urls=["https://example.com/tavily-page"],
+            provider="tavily",
+            mode="structured",
+            query="Extract fields",
+        )
 
 
 @pytest.mark.asyncio

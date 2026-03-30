@@ -19,6 +19,7 @@ Current default assumptions:
 
 Recommended baseline:
 - bind the app to localhost where possible
+- if running in Docker, bind inside the container to `0.0.0.0` but keep the published host port on `127.0.0.1` unless remote access is intentional
 - place a controlled reverse proxy in front if remote access is needed
 - keep provider API keys server-side only
 - handle TLS and external ingress in infrastructure / deployment tooling

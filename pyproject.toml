@@ -1,7 +1,7 @@
 [project]
 name = "web-search"
 version = "0.1.0"
-description = "provider-agnostic web-search MCP server with Tavily, Brave, and Exa support"
+description = "provider-agnostic web-search MCP server with Tavily, Brave, Exa, and Firecrawl providers"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [

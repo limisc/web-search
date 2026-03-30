@@ -143,7 +143,7 @@ Unified known-URL extraction entrypoint.
 ### Request fields
 - `urls`: one or more absolute HTTP(S) URLs
 - `mode`: `content | structured`
-- `schema`: optional structured extraction schema placeholder
+- `schema`: optional structured extraction schema
 - `query`: optional reranking query
 - `max_chunks`: optional chunk count
 - `format`: `markdown | text`
@@ -151,11 +151,20 @@ Unified known-URL extraction entrypoint.
 - `provider`: optional override
 
 ### Current implementation note
-- Tavily-backed extract is implemented
+- Tavily-backed extract is implemented for `mode="content"`
 - Exa-backed extract is implemented for `mode="content"`
+- Firecrawl-backed extract is implemented for `mode="content"` with `provider="firecrawl"`
+- Firecrawl-backed structured extract is the default `mode="structured"` route and also supports `provider="firecrawl"`
 - content extract requests with `query` or `max_chunks` now prefer Exa when configured, then fall back to Tavily
+- plain `mode="content"` still prefers Tavily, with Exa available as fallback when configured
 - Exa extract currently maps `query` to provider-side highlights and uses those highlights as `chunks`
-- `mode=structured` is part of the contract, but true structured extraction is not implemented yet
+- Firecrawl content extract currently uses `/scrape` markdown output and derives chunks locally
+- Firecrawl structured extract currently uses `/extract` and returns result data under `structured_data`
+- providers that do not implement `mode="structured"` now return `provider_not_implemented` instead of silently degrading to content output
+
+### Response notes
+- content mode returns extracted page objects under `pages`
+- structured mode currently returns structured output under `structured_data` and leaves `pages` empty
 
 ### Example
 ```bash

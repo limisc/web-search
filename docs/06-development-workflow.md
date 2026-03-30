@@ -70,6 +70,7 @@ cp .env.example .env
 # then set TAVILY_API_KEY in .env
 # optionally set BRAVE_SEARCH_API_KEY in .env
 # optionally set EXA_API_KEY in .env
+# optionally set FIRECRAWL_API_KEY in .env
 uv sync --extra dev
 ./scripts/local_service.sh start live
 ```

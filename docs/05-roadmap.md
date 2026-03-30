@@ -19,6 +19,7 @@ Important reality checks:
 - Brave-backed web search is implemented
 - Exa-backed web search is implemented
 - Exa-backed content extract is implemented
+- Firecrawl-backed structured extract is in the default route, and Firecrawl-backed content extract is available by provider override
 - names such as `balanced`, `high_reliability`, or `top-2` are roadmap semantics unless explicitly implemented
 - future monitoring is roadmap-only, not part of the current public surface
 - provider abstraction exists structurally, but most of its long-term value is still ahead of the codebase
@@ -71,7 +72,7 @@ Goal: stabilize the public contract, HTTP API, MCP thin facade, and router/plann
 - [x] Tavily provider adapted to the new request model
 - [x] Brave web-search adapter
 - [x] Exa web-search adapter
-- [ ] Firecrawl adapter
+- [x] Firecrawl content/structured extract adapter
 - [ ] provider capability matrix finalized
 - [x] HTTP API integration tests
 - [ ] URL content cache

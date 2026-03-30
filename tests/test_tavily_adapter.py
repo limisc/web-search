@@ -5,7 +5,7 @@ import respx
 from httpx import ConnectError, Request, Response
 
 from web_search.config import clear_settings_cache
-from web_search.models.requests import SearchRequest
+from web_search.models.requests import ExtractRequest, SearchRequest
 from web_search.providers import clear_provider_cache
 from web_search.providers.tavily import TavilyProvider
 from web_search.services.search_service import clear_search_cache
@@ -117,3 +117,32 @@ async def test_tavily_search_raises_not_configured_without_key(monkeypatch: pyte
         await provider.search(SearchRequest(query="hello"))
 
     assert exc_info.value.error_type == "provider_not_configured"
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_tavily_search_maps_rate_limit_to_budget_exceeded(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("TAVILY_API_KEY", "test-key")
+    monkeypatch.setenv("TAVILY_BASE_URL", "https://api.tavily.com")
+
+    respx.post("https://api.tavily.com/search").mock(return_value=Response(429, json={"error": "rate limited"}))
+
+    provider = TavilyProvider()
+    with pytest.raises(ProviderError) as exc_info:
+        await provider.search(SearchRequest(query="hello"))
+
+    assert exc_info.value.error_type == "budget_exceeded"
+    assert exc_info.value.provider == "tavily"
+
+
+@pytest.mark.asyncio
+async def test_tavily_extract_rejects_structured_mode_for_now(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("TAVILY_API_KEY", "test-key")
+    monkeypatch.setenv("TAVILY_BASE_URL", "https://api.tavily.com")
+
+    provider = TavilyProvider()
+    with pytest.raises(ProviderError) as exc_info:
+        await provider.extract(ExtractRequest(urls=["https://example.com"], provider="tavily", mode="structured"))
+
+    assert exc_info.value.error_type == "provider_not_implemented"
+    assert exc_info.value.provider == "tavily"

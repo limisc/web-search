@@ -57,4 +57,5 @@ class ExtractResponse(BaseModel):
     provider: str
     mode: str
     pages: list[ExtractedPage]
+    structured_data: dict[str, Any] | list[Any] | None = None
     meta: ResponseMeta

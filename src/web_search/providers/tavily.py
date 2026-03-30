@@ -88,10 +88,18 @@ class TavilyProvider:
 
     async def extract(self, request: ExtractRequest) -> ExtractResponse:
         self._ensure_configured()
+        if request.mode != "content":
+            raise ProviderError(
+                "Provider not implemented yet: tavily structured extract",
+                provider=self.name,
+                error_type="provider_not_implemented",
+                details={"mode": request.mode},
+            )
+
         started = time.perf_counter()
         body: dict[str, Any] = {
             "urls": [str(url) for url in request.urls],
-            "extract_depth": "advanced" if request.mode == "structured" else "basic",
+            "extract_depth": "basic",
             "format": request.format,
         }
         if request.query:
@@ -161,7 +169,14 @@ class TavilyProvider:
                     last_error_type = "provider_connection_error"
                 except httpx.HTTPStatusError as exc:
                     status = exc.response.status_code
-                    if status == 429 or status in {502, 503, 504}:
+                    if status == 429:
+                        raise ProviderError(
+                            "Tavily rate limit exceeded",
+                            provider=self.name,
+                            error_type="budget_exceeded",
+                            details={"status_code": status, "attempt": attempt},
+                        ) from exc
+                    if status in {502, 503, 504}:
                         last_error = exc
                         last_error_type = "provider_unavailable"
                     else:

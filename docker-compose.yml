@@ -8,7 +8,7 @@ services:
     env_file:
       - .env
     environment:
-      MCP_HOST: ${MCP_HOST:-0.0.0.0}
+      MCP_HOST: 0.0.0.0
       MCP_PORT: ${MCP_PORT:-8000}
       MCP_PATH: ${MCP_PATH:-/mcp}
       FASTMCP_STATELESS_HTTP: ${FASTMCP_STATELESS_HTTP:-true}
