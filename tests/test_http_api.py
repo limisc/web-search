@@ -322,7 +322,11 @@ async def test_web_search_light_verification_dedupes_canonical_urls(app, monkeyp
     assert response.status_code == 200
     assert len(body["results"]) == 1
     assert body["results"][0]["url"] == "https://example.com/docs"
-    assert body["meta"]["verification_summary"] == {"canonicalized_urls": 1, "duplicates_removed": 1}
+    assert body["meta"]["verification_summary"] == {
+        "canonicalized_urls": 1,
+        "duplicates_removed": 1,
+        "source_domains": ["example.com"],
+    }
 
 
 @pytest.mark.asyncio

@@ -45,4 +45,5 @@ def test_apply_light_verification_dedupes_results_and_citations() -> None:
     assert verified.meta.verification_summary == {
         "canonicalized_urls": 1,
         "duplicates_removed": 1,
+        "source_domains": ["example.com"],
     }

@@ -9,6 +9,7 @@ from web_search.models.routing import ExtractCapability, SearchCapability
 VerificationLevel = Literal["none", "light", "medium", "high"]
 CacheState = Literal["miss", "fresh", "stale"]
 Capability = SearchCapability | ExtractCapability
+VerificationSummary = dict[str, int | list[str]]
 
 
 class Citation(BaseModel):
@@ -38,7 +39,7 @@ class ResponseMeta(BaseModel):
     provider_override_applied: bool = False
     providers_used: list[str] = Field(default_factory=list)
     verification_level: VerificationLevel = "none"
-    verification_summary: dict[str, int] | None = None
+    verification_summary: VerificationSummary | None = None
     partial_failures: list[dict[str, str]] = Field(default_factory=list)
 
 

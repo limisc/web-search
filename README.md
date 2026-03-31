@@ -42,7 +42,7 @@ Implemented today:
 - router / planner skeleton
 - successful responses expose `meta.route`, `meta.capability`, and `meta.provider_override_applied`
 - provider-facing HTTP errors can include route context and minimal provider-health snapshots
-- `verification_level="light"` now canonicalizes URLs and removes duplicate search hits that collapse to the same canonical URL
+- `verification_level="light"` now canonicalizes URLs, removes duplicate search hits that collapse to the same canonical URL, and reports source domains as a lightweight diversity hint
 - successful fallback search responses can expose `meta.partial_failures`
 - query cache
 - URL content cache with stale-while-revalidate semantics for single-URL content extract

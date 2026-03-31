@@ -145,7 +145,8 @@ Current extract behavior is more limited:
 Current light verification behavior is intentionally small:
 
 - `verification_level="light"` now canonicalizes result URLs and drops duplicate search results that collapse to the same canonical URL
-- this is the first real verifier step, not a full multi-provider agreement system yet
+- it also reports source domains as a lightweight diversity hint
+- this is still not a full multi-provider agreement system
 
 ## Design notes from adjacent repos
 

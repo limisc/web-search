@@ -33,6 +33,8 @@ def apply_light_verification(response: SearchResponse) -> SearchResponse:
     seen_urls: set[str] = set()
     canonicalized_urls = 0
     duplicates_removed = 0
+    source_domains: list[str] = []
+    seen_domains: set[str] = set()
 
     for result in response.results:
         canonical_url = canonicalize_url(str(result.url))
@@ -43,6 +45,10 @@ def apply_light_verification(response: SearchResponse) -> SearchResponse:
             duplicates_removed += 1
             continue
         seen_urls.add(canonical_url)
+        domain = _domain_for(canonical_url)
+        if domain not in seen_domains:
+            seen_domains.add(domain)
+            source_domains.append(domain)
         deduped_results.append(result)
 
     deduped_citations = []
@@ -63,6 +69,7 @@ def apply_light_verification(response: SearchResponse) -> SearchResponse:
                     "verification_summary": {
                         "canonicalized_urls": canonicalized_urls,
                         "duplicates_removed": duplicates_removed,
+                        "source_domains": source_domains,
                     }
                 }
             ),
@@ -96,3 +103,7 @@ def canonicalize_url(url: str) -> str:
 def _should_drop_query_param(key: str) -> bool:
     lowered = key.lower()
     return lowered.startswith(_TRACKING_QUERY_PREFIXES) or lowered in _TRACKING_QUERY_KEYS
+
+
+def _domain_for(url: str) -> str:
+    return (urlsplit(url).hostname or "").lower()
