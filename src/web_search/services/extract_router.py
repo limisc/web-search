@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from web_search.config import get_settings
 from web_search.models.requests import ExtractRequest
-from web_search.models.routing import ExtractRouteDecision, RouteKind
+from web_search.models.routing import ExtractCapability, ExtractRouteDecision, RouteKind
 
 
 class ExtractRouter:
@@ -37,7 +37,7 @@ class ExtractRouter:
         )
 
     @staticmethod
-    def _capability_for(request: ExtractRequest) -> str:
+    def _capability_for(request: ExtractRequest) -> ExtractCapability:
         if request.mode == "structured":
             return "structured_extract"
         return "content_extract"

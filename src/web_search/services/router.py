@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from web_search.config import get_settings
 from web_search.models.requests import SearchRequest
-from web_search.models.routing import RouteKind, SearchRouteDecision
+from web_search.models.routing import RouteKind, SearchCapability, SearchRouteDecision
 
 
 class Router:
@@ -62,7 +62,7 @@ class Router:
             capability=capability,
         )
 
-    def _capability_for(self, request: SearchRequest) -> str:
+    def _capability_for(self, request: SearchRequest) -> SearchCapability:
         if request.intent == "docs":
             return "authoritative_search"
         if request.intent == "fresh":
