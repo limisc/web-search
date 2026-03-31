@@ -28,21 +28,33 @@ When changing Python code in this repository:
 - keep docs concise and aligned to current reality; avoid public-rollout or deprecation-heavy wording unless a real migration path is needed
 - if behavior changes, add or update tests in the same batch
 - finish each logical batch with `uv run pytest -q` and `uv run ruff check .`
+- before every commit, do a self-audit of code, docs, tests, versioning, and runtime behavior; do not commit if there are known leftovers, stale docs, editor-type errors, or unreviewed behavior changes
+- when a logical batch changes public behavior, routing, provider capability support, cache semantics, or docs, re-read `README.md` and the relevant `docs/*.md` files and update them in the same batch
+- when preparing a release-style commit or version bump, update `pyproject.toml`, refresh `uv.lock`, create the matching git tag, and push both the commit and the tag to GitHub
+- after each completed batch, explicitly review what the next highest-value step should be before stopping
 
 ## Default loop
 
 1. Start or reuse the stable `live` service from the separate worktree.
 2. Do code changes in `dev`.
-3. After a logical batch, run:
+3. Before committing, run a self-check:
+   - inspect `git status`
+   - review changed code for leftovers or hacky transition paths
+   - review `README.md` and relevant `docs/*.md` for stale statements
+   - run type and test checks appropriate to the batch
+   - confirm whether version, tag, and `uv.lock` also need updates
+4. After a logical batch, run:
 
 ```bash
 uv run pytest -q
 uv run ruff check .
 ```
 
-4. If runtime validation is needed, start a temporary `preview` instance from `dev` on another port, usually `8001`, with `./scripts/local_service.sh start preview`.
-5. Only after the batch passes, manually promote the chosen commit to the `live` worktree and restart the live service.
-6. Unless the user explicitly asks to test preview, keep other tools, scripts, and agents pointed at `live`, not `preview`.
+5. If runtime validation is needed, start a temporary `preview` instance from `dev` on another port, usually `8001`, with `./scripts/local_service.sh start preview`.
+6. Only after the batch passes, manually promote the chosen commit to the `live` worktree and restart the live service.
+7. If the batch also bumps the release version, update `pyproject.toml`, refresh `uv.lock`, create the matching git tag, and push both the branch and tag to GitHub.
+8. Unless the user explicitly asks to test preview, keep other tools, scripts, and agents pointed at `live`, not `preview`.
+9. Before stopping, state the next highest-value step.
 
 ## Preferred transport
 
