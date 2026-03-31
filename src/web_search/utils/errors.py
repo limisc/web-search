@@ -16,3 +16,12 @@ class ProviderError(Exception):
         self.provider = provider
         self.error_type = error_type
         self.details = details or {}
+
+    def with_details(self, **details: Any) -> "ProviderError":
+        merged_details = {**self.details, **details}
+        return ProviderError(
+            str(self),
+            provider=self.provider,
+            error_type=self.error_type,
+            details=merged_details,
+        )

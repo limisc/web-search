@@ -24,13 +24,19 @@ class ExtractService:
 
     async def run(self, request: ExtractRequest) -> ExtractResponse:
         decision = self.router.plan(request)
+        decision_details = {
+            "route": decision.route,
+            "capability": decision.capability,
+            "provider_override_applied": decision.provider_override_applied,
+            "providers": list(decision.providers),
+        }
 
         if request.mode == "structured" and not decision.providers:
             raise ProviderError(
                 "Structured extract is not implemented yet",
                 provider="router",
                 error_type="provider_not_implemented",
-                details={"mode": request.mode},
+                details={"mode": request.mode, **decision_details},
             )
 
         if cacheable_extract_request(request) and len(request.urls) == 1:
@@ -53,9 +59,9 @@ class ExtractService:
                 response.meta.providers_used = [provider_name]
                 return response
             except ProviderError as exc:
-                last_error = exc
+                last_error = exc.with_details(**decision_details, attempted_provider=provider_name)
                 if not decision.allows_fallback:
-                    raise
+                    raise last_error
 
         if last_error is not None:
             raise last_error
@@ -64,7 +70,7 @@ class ExtractService:
             "No available providers for extract request",
             provider="router",
             error_type="provider_not_available",
-            details={"mode": request.mode, "providers": list(decision.providers)},
+            details={"mode": request.mode, **decision_details},
         )
 
     async def _run_with_content_cache(
@@ -74,6 +80,12 @@ class ExtractService:
     ) -> ExtractResponse | None:
         last_error: ProviderError | None = None
         url = str(request.urls[0])
+        decision_details = {
+            "route": decision.route,
+            "capability": decision.capability,
+            "provider_override_applied": decision.provider_override_applied,
+            "providers": list(decision.providers),
+        }
 
         for provider_name in decision.providers:
             if not is_extract_provider_available(provider_name):
@@ -124,9 +136,9 @@ class ExtractService:
                     ),
                 )
             except ProviderError as exc:
-                last_error = exc
+                last_error = exc.with_details(**decision_details, attempted_provider=provider_name)
                 if not decision.allows_fallback:
-                    raise
+                    raise last_error
 
         if last_error is not None:
             raise last_error

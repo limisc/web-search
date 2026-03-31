@@ -42,6 +42,7 @@ Some of these already exist in code. The full HTTP + MCP normalization layer is 
 - `error.type`: stable semantic error name
 - `error.message`: human-readable explanation
 - `error.provider`: optional provider identifier when relevant
+- `error.details`: optional structured context for decision or provider state
 
 ---
 
@@ -128,6 +129,7 @@ Current status:
 
 - MCP tool errors are already normalized by the tool layer
 - HTTP API errors are now normalized into the semantic error shape for validation, malformed JSON, and provider failures
+- provider failures can now include structured `error.details` context such as route, capability, provider override state, and attempted provider
 - future partial-success behavior should not be hidden as a full success or a full failure
 
 ---

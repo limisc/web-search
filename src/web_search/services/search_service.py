@@ -29,6 +29,13 @@ class SearchService:
         started = time.perf_counter()
         decision = self.router.plan(request)
         mode = self.planner.mode_for(request)
+        decision_details = {
+            "route": decision.route,
+            "capability": decision.capability,
+            "provider_override_applied": decision.provider_override_applied,
+            "providers": list(decision.providers),
+            "mode": mode,
+        }
 
         chosen_provider_name: str | None = None
         last_error: ProviderError | None = None
@@ -51,9 +58,9 @@ class SearchService:
                 _SEARCH_CACHE.set(cache_key, response.model_copy(deep=True))
                 return response
             except ProviderError as exc:
-                last_error = exc
+                last_error = exc.with_details(**decision_details, attempted_provider=provider_name)
                 if not decision.allows_fallback:
-                    raise
+                    raise last_error
 
         if last_error is not None:
             raise last_error
@@ -62,7 +69,7 @@ class SearchService:
             f"No available providers for intent {request.intent}",
             provider=chosen_provider_name or "router",
             error_type="provider_not_available",
-            details={"intent": request.intent, "providers": list(decision.providers)},
+            details={"intent": request.intent, **decision_details},
         )
 
 

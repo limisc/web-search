@@ -36,10 +36,13 @@ def _error_response(
     message: str,
     status_code: int,
     provider: str | None = None,
+    details: dict[str, Any] | None = None,
 ) -> JSONResponse:
-    error: dict[str, str] = {"type": error_type, "message": message}
+    error: dict[str, Any] = {"type": error_type, "message": message}
     if provider and provider != "router":
         error["provider"] = provider
+    if details:
+        error["details"] = details
     return JSONResponse({"error": error}, status_code=status_code)
 
 
@@ -94,6 +97,7 @@ async def handle_provider_error(_request: Request, exc: Exception) -> JSONRespon
         error_type=error_type,
         message=str(provider_exc),
         provider=provider_exc.provider,
+        details=provider_exc.details,
         status_code=status_code,
     )
 

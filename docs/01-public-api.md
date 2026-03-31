@@ -117,6 +117,7 @@ Unified source-discovery entrypoint.
 - `verification_level` is currently a contract field, not proof of real cross-provider verification
 - `provider` override exists mainly to force an available path during the transition period
 - if a caller overrides `provider` to one that does not implement the requested capability, the service returns `provider_not_supported`
+- provider failure responses may include `error.details` with route-decision context such as route, capability, provider override state, configured provider order, and attempted provider
 
 ### Example
 
@@ -186,6 +187,7 @@ Unified known-URL extraction entrypoint.
 - `meta.route` keeps the current route shape such as `single:low_cost` or `fallback_candidate:low_cost`
 - content mode returns extracted page objects under `pages`
 - extract responses currently expose `meta.route`, `meta.capability`, `meta.provider_override_applied`, `meta.providers_used`, and `meta.cache_state`
+- error responses may expose `error.details` with structured provider or route-decision context
 - `structured_data` is reserved for future structured extraction support
 
 ### Example

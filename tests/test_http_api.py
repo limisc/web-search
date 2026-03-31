@@ -142,6 +142,10 @@ async def test_web_search_rejects_firecrawl_as_unsupported_search_provider(app) 
             "type": "provider_not_supported",
             "message": "Unsupported search provider: firecrawl",
             "provider": "firecrawl",
+            "details": {
+                "capability": "search",
+                "supported_capabilities": ["content_extract"],
+            },
         }
     }
 
@@ -160,6 +164,10 @@ async def test_web_extract_rejects_brave_as_unsupported_extract_provider(app) ->
             "type": "provider_not_supported",
             "message": "Unsupported extract provider: brave",
             "provider": "brave",
+            "details": {
+                "capability": "extract",
+                "supported_capabilities": ["broad_search"],
+            },
         }
     }
 
@@ -181,6 +189,14 @@ async def test_web_search_returns_provider_not_configured_when_key_missing(app, 
             "type": "provider_not_configured",
             "message": "TAVILY_API_KEY is not configured",
             "provider": "tavily",
+            "details": {
+                "attempted_provider": "tavily",
+                "capability": "broad_search",
+                "mode": "low_cost",
+                "provider_override_applied": False,
+                "providers": ["tavily"],
+                "route": "single",
+            },
         }
     }
 
@@ -205,6 +221,16 @@ async def test_web_search_returns_budget_exceeded_for_tavily_rate_limit(app, mon
             "type": "budget_exceeded",
             "message": "Tavily rate limit exceeded",
             "provider": "tavily",
+            "details": {
+                "attempt": 1,
+                "attempted_provider": "tavily",
+                "capability": "broad_search",
+                "mode": "low_cost",
+                "provider_override_applied": False,
+                "providers": ["tavily"],
+                "route": "single",
+                "status_code": 429,
+            },
         }
     }
 
@@ -546,6 +572,14 @@ async def test_web_extract_rejects_exa_structured_mode_for_now(app, monkeypatch:
             "type": "provider_not_implemented",
             "message": "Provider not implemented yet: exa structured extract",
             "provider": "exa",
+            "details": {
+                "attempted_provider": "exa",
+                "capability": "structured_extract",
+                "mode": "structured",
+                "provider_override_applied": True,
+                "providers": ["exa"],
+                "route": "provider_override",
+            },
         }
     }
 
@@ -617,6 +651,13 @@ async def test_web_extract_rejects_structured_extract_by_default(app, monkeypatc
         "error": {
             "type": "provider_not_implemented",
             "message": "Structured extract is not implemented yet",
+            "details": {
+                "capability": "structured_extract",
+                "mode": "structured",
+                "provider_override_applied": False,
+                "providers": [],
+                "route": "single",
+            },
         }
     }
 
@@ -643,6 +684,14 @@ async def test_web_extract_rejects_firecrawl_structured_override(app, monkeypatc
             "type": "provider_not_implemented",
             "message": "Provider not implemented yet: firecrawl structured extract",
             "provider": "firecrawl",
+            "details": {
+                "attempted_provider": "firecrawl",
+                "capability": "structured_extract",
+                "mode": "structured",
+                "provider_override_applied": True,
+                "providers": ["firecrawl"],
+                "route": "provider_override",
+            },
         }
     }
 
@@ -669,6 +718,14 @@ async def test_web_extract_rejects_tavily_structured_mode_when_overridden(app, m
             "type": "provider_not_implemented",
             "message": "Provider not implemented yet: tavily structured extract",
             "provider": "tavily",
+            "details": {
+                "attempted_provider": "tavily",
+                "capability": "structured_extract",
+                "mode": "structured",
+                "provider_override_applied": True,
+                "providers": ["tavily"],
+                "route": "provider_override",
+            },
         }
     }
 
@@ -694,5 +751,12 @@ async def test_web_extract_returns_firecrawl_not_configured_when_key_missing(app
             "type": "provider_not_configured",
             "message": "FIRECRAWL_API_KEY is not configured",
             "provider": "firecrawl",
+            "details": {
+                "attempted_provider": "firecrawl",
+                "capability": "content_extract",
+                "provider_override_applied": True,
+                "providers": ["firecrawl"],
+                "route": "provider_override",
+            },
         }
     }
