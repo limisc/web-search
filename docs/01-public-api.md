@@ -171,6 +171,7 @@ Unified known-URL extraction entrypoint.
 - content extract requests with `query` or `max_chunks` now prefer Exa when configured, then fall back to Tavily
 - plain `mode="content"` still prefers Tavily, with Exa available as fallback when configured
 - single-URL `mode="content"` requests now use a local SQLite URL content cache with stale-while-revalidate behavior when `debug=false`
+- extract responses now expose `meta.cache_state` as `miss | fresh | stale` when the local URL content cache is in play
 - Exa extract currently maps `query` to provider-side highlights and uses those highlights as `chunks`
 - Firecrawl content extract currently uses `/scrape` markdown output and derives chunks locally
 - `mode="structured"` is part of the contract, but no provider implements it right now

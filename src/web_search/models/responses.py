@@ -5,6 +5,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field, HttpUrl
 
 VerificationLevel = Literal["none", "light", "medium", "high"]
+CacheState = Literal["miss", "fresh", "stale"]
 
 
 class Citation(BaseModel):
@@ -28,6 +29,7 @@ class SearchHit(BaseModel):
 class ResponseMeta(BaseModel):
     latency_ms: int
     cached: bool = False
+    cache_state: CacheState | None = None
     route: str | None = None
     providers_used: list[str] = Field(default_factory=list)
     verification_level: VerificationLevel = "none"

@@ -464,6 +464,7 @@ async def test_web_extract_returns_exa_success_when_overridden(app, monkeypatch:
     assert response.status_code == 200
     assert body["provider"] == "exa"
     assert body["meta"]["route"] == "provider_override"
+    assert body["meta"]["cache_state"] == "miss"
     assert body["pages"][0]["title"] == "Exa Page"
     assert body["pages"][0]["chunks"] == ["chunk-1", "chunk-2"]
 
@@ -573,6 +574,7 @@ async def test_web_extract_returns_firecrawl_success_when_overridden(app, monkey
     assert response.status_code == 200
     assert body["provider"] == "firecrawl"
     assert body["meta"]["route"] == "provider_override"
+    assert body["meta"]["cache_state"] == "miss"
     assert body["pages"][0]["title"] == "Model Context Protocol"
     assert body["pages"][0]["chunks"] == ["Paragraph two with MCP details"]
 

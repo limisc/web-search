@@ -42,6 +42,7 @@ Implemented today:
 - router / planner skeleton
 - query cache
 - URL content cache with stale-while-revalidate semantics for single-URL content extract
+- extract responses expose `meta.cache_state` as `miss | fresh | stale` when the local URL content cache is used
 
 Not implemented yet:
 - Firecrawl-backed structured extract

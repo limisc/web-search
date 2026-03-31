@@ -100,6 +100,7 @@ async def test_content_cache_returns_stale_and_refreshes_in_background(tmp_path)
     fresh = await cache.get_or_create(provider="exa", url="https://example.com/page", loader=second_loader)
     assert fresh.page is not None
     assert fresh.page.content == "new body"
+    assert fresh.state == "fresh"
     assert calls == ["first", "second"]
 
 
@@ -146,6 +147,8 @@ async def test_extract_service_uses_content_cache_for_single_url(monkeypatch: py
     first = await service.run(request)
     second = await service.run(request)
 
+    assert first.meta.cache_state == "miss"
     assert first.pages[0].chunks == ["cached body"]
     assert second.meta.cached is True
+    assert second.meta.cache_state == "fresh"
     assert call_count == 1

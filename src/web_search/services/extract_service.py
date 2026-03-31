@@ -106,6 +106,7 @@ class ExtractService:
                     meta=ResponseMeta(
                         latency_ms=0,
                         cached=lookup.state in {"fresh", "stale"},
+                        cache_state=lookup.state,
                         route=plan.route,
                         providers_used=[provider_name],
                     ),
