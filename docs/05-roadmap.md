@@ -183,7 +183,7 @@ Goal: improve result quality with lightweight verification and normalization, wi
 
 ### V1.5 checklist
 
-- [ ] verification levels become real behavior, not just contract placeholders
+- [x] verification levels become real behavior, not just contract placeholders
 - [ ] duplicate collapse / canonical URL handling
 - [ ] verifier module with lightweight diversity and agreement signals
 - [ ] partial-results semantics become explicit behavior

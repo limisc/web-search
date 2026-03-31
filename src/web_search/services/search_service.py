@@ -8,6 +8,7 @@ from web_search.providers import get_search_provider, is_search_provider_availab
 from web_search.services.planner import Planner
 from web_search.services.provider_health import get_provider_health
 from web_search.services.router import Router
+from web_search.services.verifier import apply_light_verification
 from web_search.utils.cache import TTLCache, make_cache_key
 from web_search.utils.errors import ProviderError
 
@@ -59,6 +60,8 @@ class SearchService:
                 )
                 response.meta.verification_level = request.verification_level
                 response.meta.latency_ms = int((time.perf_counter() - started) * 1000)
+                if request.verification_level == "light":
+                    response = apply_light_verification(response)
                 _SEARCH_CACHE.set(cache_key, response.model_copy(deep=True))
                 return response
             except ProviderError as exc:

@@ -114,7 +114,8 @@ Unified source-discovery entrypoint.
 - `docs` now prefers Exa when configured, then falls back to Brave or Tavily
 - `social` is still a contract lane without a social-specialized provider yet
 - `fresh` now prefers NewsAPI when configured, then falls back to the currently configured general providers
-- `verification_level` is currently a contract field, not proof of real cross-provider verification
+- `verification_level` is currently a contract field, not proof of full cross-provider verification
+- `verification_level="light"` now performs a small verifier step by canonicalizing URLs and collapsing duplicate search hits that normalize to the same URL
 - `provider` override exists mainly to force an available path during the transition period
 - if a caller overrides `provider` to one that does not implement the requested capability, the service returns `provider_not_supported`
 - provider failure responses may include `error.details` with route-decision context such as route, capability, provider override state, configured provider order, and attempted provider

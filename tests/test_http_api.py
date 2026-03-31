@@ -278,8 +278,50 @@ async def test_web_search_routes_fresh_intent_to_newsapi_when_configured(app, mo
     assert body["meta"]["route"] == "fallback_candidate:low_cost"
     assert body["meta"]["capability"] == "fresh_search"
     assert body["meta"]["provider_override_applied"] is False
+    assert body["meta"]["verification_summary"] is None
     assert body["results"][0]["title"] == "Fresh headline"
     assert body["results"][0]["source_type"] == "news"
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_web_search_light_verification_dedupes_canonical_urls(app, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("TAVILY_API_KEY", "test-key")
+    monkeypatch.setenv("TAVILY_BASE_URL", "https://api.tavily.com")
+
+    respx.post("https://api.tavily.com/search").mock(
+        return_value=Response(
+            200,
+            json={
+                "results": [
+                    {
+                        "title": "A",
+                        "url": "https://example.com/docs?utm_source=test",
+                        "content": "first",
+                        "score": 0.9,
+                    },
+                    {
+                        "title": "B",
+                        "url": "https://example.com/docs",
+                        "content": "second",
+                        "score": 0.8,
+                    },
+                ],
+            },
+        )
+    )
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://testserver") as client:
+        response = await client.post(
+            "/api/web_search",
+            json={"query": "What is MCP?", "provider": "tavily", "verification_level": "light"},
+        )
+
+    body = response.json()
+    assert response.status_code == 200
+    assert len(body["results"]) == 1
+    assert body["results"][0]["url"] == "https://example.com/docs"
+    assert body["meta"]["verification_summary"] == {"canonicalized_urls": 1, "duplicates_removed": 1}
 
 
 @pytest.mark.asyncio

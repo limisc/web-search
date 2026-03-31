@@ -38,6 +38,7 @@ class ResponseMeta(BaseModel):
     provider_override_applied: bool = False
     providers_used: list[str] = Field(default_factory=list)
     verification_level: VerificationLevel = "none"
+    verification_summary: dict[str, int] | None = None
 
 
 def apply_route_metadata(

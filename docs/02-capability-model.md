@@ -142,6 +142,11 @@ Current extract behavior is more limited:
 - default `mode="structured"` returns `provider_not_implemented`
 - no provider currently implements `mode="structured"`
 
+Current light verification behavior is intentionally small:
+
+- `verification_level="light"` now canonicalizes result URLs and drops duplicate search results that collapse to the same canonical URL
+- this is the first real verifier step, not a full multi-provider agreement system yet
+
 ## Design notes from adjacent repos
 
 A few patterns from nearby search projects are worth keeping in view as this capability model evolves.

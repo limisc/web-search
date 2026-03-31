@@ -42,6 +42,7 @@ Implemented today:
 - router / planner skeleton
 - successful responses expose `meta.route`, `meta.capability`, and `meta.provider_override_applied`
 - provider-facing HTTP errors can include route context and minimal provider-health snapshots
+- `verification_level="light"` now canonicalizes URLs and removes duplicate search hits that collapse to the same canonical URL
 - query cache
 - URL content cache with stale-while-revalidate semantics for single-URL content extract
 - extract responses expose `meta.cache_state` as `miss | fresh | stale` when the local URL content cache is used
@@ -54,7 +55,7 @@ Not implemented yet:
 - default-routed Firecrawl content extract lane
 - Grok adapters
 - true multi-provider fan-out
-- real verification / agreement behavior behind `verification_level`
+- medium and high verification behavior
 - monitoring pipeline / scheduler integration / alerts
 
 So the repository is currently **orchestrator-shaped** with **Tavily + Brave + Exa + NewsAPI search paths** and **Tavily + Exa + Firecrawl extract paths**, while broader routing and verification are still in progress.
