@@ -1,18 +1,32 @@
 # Roadmap
 
+## Current planning stance
+
+This roadmap needs to follow the repository as it actually exists now.
+It should not preserve early guesses when code, docs, and operating assumptions have moved.
+
+The current priority order is:
+- finish V1 honestly
+- use V1.5 for lightweight verification and normalization work
+- keep V2 for later routing intelligence and heavier ideas
+
+This repo is a search and extraction layer for agents.
+It is not trying to become a provider-monitoring console or a general upstream-control plane.
+So any provider-health work should stay minimal and in service of routing or error clarity, not expand into a management product.
+
 ## Phase status overview
 
-| Phase | Status      | Core goal                                                         | Notes                                                                                    |
-| ----- | ----------- | ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| V1    | in progress | unified interfaces + thin MCP + HTTP APIs + orchestrator skeleton | code already moved here, with Tavily plus Brave plus Exa plus NewsAPI execution in place |
-| V1.5  | planned     | verification + future monitoring building blocks                  | depends on basic multi-provider capabilities landing first                               |
-| V2    | planned     | intelligent routing, ranking, cost-awareness, health-awareness    | after V1.5 stabilizes                                                                    |
+| Phase | Status | Core goal | Notes |
+| --- | --- | --- | --- |
+| V1 | nearly complete | stable `web_search` and `web_extract` contract plus current provider lanes | only the structured-extract question still needs a clean product decision |
+| V1.5 | next | lightweight verification, normalization, and partial-results foundations | this is the highest-value product step now |
+| V2 | later | smarter routing, ranking, richer synthesis, and broader provider graph | do not pull this forward before V1.5 becomes real |
 
 ---
 
 ## Current implementation guardrail
 
-This roadmap describes the direction of the repository, not a claim that every named mechanism already exists.
+This roadmap describes direction, not a claim that every named mechanism already exists.
 
 Important reality checks:
 
@@ -22,14 +36,62 @@ Important reality checks:
 - NewsAPI-backed fresh/news search is implemented
 - Exa-backed content extract is implemented
 - Firecrawl-backed content extract is available by provider override
-- provider capability support is now explicit in code and docs
+- provider capability support is explicit in code and docs
+- route-decision metadata is exposed in successful responses
+- route context is now attached to provider-facing HTTP errors
+- a minimal provider live-health snapshot exists only to distinguish configured vs missing-config states
 - structured extract is still disabled until a sane-cost path is chosen
+
+## Fresh external signals
+
+This section is for periodically refreshed outside input.
+It is here so the project does not only follow an old roadmap snapshot.
+
+How to use it:
+- do a broad search refresh regularly
+- verify promising ideas with official or canonical sources
+- if those findings change priorities, update the roadmap in the same batch
+- keep this section concise and current
+
+### Refresh loop
+
+1. broad search for new provider options, architecture patterns, testing ideas, and operational lessons
+2. narrow to official docs, pricing pages, or canonical repo sources
+3. decide whether the evidence changes near-term priorities
+4. if yes, update this roadmap before or with the implementation batch
+
+### Things worth refreshing often
+
+- structured extraction providers and pricing
+- verification and dedupe designs in adjacent search orchestrators
+- self-hosted broad-search backends
+- Google and SERP lane options
+- lightweight monitoring and diff ideas
+- MCP and transport reuse patterns
+
+### Current read on outside options
+
+- `SerpApi` still looks like the strongest premium Google/SERP supplement if Google coverage becomes important enough to justify cost.
+- `Serper` still looks attractive for budget Google-only broad search, but it is not a strong reason to expand the root contract yet.
+- `SearchApi.io` remains watchable, but it is less compelling than the top two SERP candidates right now.
+- `Diffbot` remains the strongest structured-extract candidate worth watching closely.
+- `BrowserCat` still looks like the cleanest browser-lane candidate for JS-heavy pages and interactive extraction later.
+- `Apify` still looks better as an ecosystem escape hatch than as a core near-term lane.
+- `Olostep` remains interesting, but it is still not strong enough to become a near-term roadmap driver.
+- `Jina Reader` is more useful as a transform helper than as a core search or extract lane.
+
+### Recording rule
+
+When a refresh materially changes what this repo should do next, capture:
+- what changed
+- why it matters here
+- whether it changes the next batch, a later phase, or just the watchlist
 
 ---
 
 ## Phase V1
 
-Goal: stabilize the public contract, HTTP API, MCP thin facade, and router/planner/cache skeleton first.
+Goal: stabilize the public contract, HTTP API, MCP thin facade, and current provider lanes without growing accidental surfaces.
 
 ### Scope
 
@@ -37,11 +99,11 @@ Goal: stabilize the public contract, HTTP API, MCP thin facade, and router/plann
   - unified `web_search` schema
   - unified `web_extract` schema
 - provider layer
-  - keep `tavily` working
-  - reserve adapter slots for `exa`, `brave`, `newsapi`, `firecrawl`, `grok`
+  - Tavily, Brave, Exa, NewsAPI, and Firecrawl in their current capability lanes
 - orchestration layer
   - rule-based router
   - planner modes
+  - typed route-decision model
   - unified response models
 - cache
   - query cache
@@ -72,16 +134,17 @@ Goal: stabilize the public contract, HTTP API, MCP thin facade, and router/plann
 - [x] MCP tools aligned with HTTP contract
 - [x] router skeleton
 - [x] planner skeleton
+- [x] typed route-decision model
 - [x] query cache
 - [x] Tavily provider adapted to the new request model
 - [x] Brave web-search adapter
 - [x] Exa web-search adapter
 - [x] NewsAPI fresh-search adapter
 - [x] Firecrawl content extract adapter
-- [ ] structured extract execution
 - [x] provider capability matrix finalized
 - [x] HTTP API integration tests
 - [x] URL content cache
+- [ ] decide whether `structured_extract` stays as a contract-only placeholder for now or moves to a later phase explicitly
 
 ### V1 Definition of Done
 
@@ -91,47 +154,46 @@ V1 should only be declared complete when all of the following are true:
 - the Tavily primary path is stable, including timeout / failure degradation behavior
 - docs and implementation have been checked for consistency
 - default token / cost-control behavior has been both implemented and documented
+- the roadmap tells the truth about structured extract instead of treating it as an almost-done implementation item
 
 ---
 
 ## Phase V1.5
 
-Goal: improve reliability and prepare the foundations for future scheduled watch / diff / alerts.
+Goal: improve result quality with lightweight verification and normalization, without turning the project into a large monitoring system.
 
 ### Scope
 
-- verification levels
-  - `none`: single provider
-  - `light`: future limited secondary verification behavior later
-  - `medium`: future stronger multi-provider verification behavior later
-  - `high`: future strongest verification + extract behavior later
+- verification levels become real in small steps
+  - `none`: current single-provider behavior
+  - `light`: dedupe and canonicalization first
+  - `medium`: limited source-diversity and agreement checks later
+  - `high`: reserved until the lighter levels prove useful
 - verifier module
   - URL canonicalization
-  - domain diversity
   - duplicate collapse
-  - source agreement score
-  - conflict note
-- future monitoring building blocks
-  - initial state store
-  - result hash / URL set tracking
-  - diff detection for page changes / extracted-field changes
-- alerts
-  - webhook / log output first
+  - domain diversity notes
+  - source agreement hints where practical
+- partial-results semantics
+  - clearer behavior when fallback succeeds after upstream failures
+  - honest error or meta signals instead of silent degradation
+- minimal monitoring building blocks only if they directly support search quality work
+  - do not build a provider dashboard
+  - do not build a separate upstream control plane yet
 
 ### V1.5 checklist
 
 - [ ] verification levels become real behavior, not just contract placeholders
-- [ ] verifier module
 - [ ] duplicate collapse / canonical URL handling
-- [ ] future monitor state store
-- [ ] future diff detection
-- [ ] simple alerts
+- [ ] verifier module with lightweight diversity and agreement signals
+- [ ] partial-results semantics become explicit behavior
+- [ ] decide whether any minimal state store is truly needed before adding monitor or diff machinery
 
 ---
 
 ## Phase V2
 
-Goal: evolve from a purely rule-based orchestrator into one with cost-awareness, health-awareness, and some learned behavior.
+Goal: evolve from a rule-based orchestrator into one with smarter routing, broader provider options, and richer synthesis only after V1.5 is real.
 
 ### Scope
 
@@ -140,35 +202,27 @@ Goal: evolve from a purely rule-based orchestrator into one with cost-awareness,
   - constrained route-plan JSON output
   - still bounded by rule guards
 - learned ranking
-  - simple later adjustments from feedback / usage data
+  - simple later adjustments from feedback or usage data
 - per-task cost budget
   - different limits for ad-hoc search vs future scheduled jobs
-- provider health-aware routing
-  - error-rate / latency tracking
-  - automatic downgrade / fallback
+- health-aware routing
+  - if this grows beyond configured-vs-missing-config, keep it strictly in service of routing quality
+  - do not turn it into an operator-facing provider-status product
 - expanded provider graph
-  - Firecrawl for extraction-heavy paths
-  - Grok for freshness / social paths
-  - richer verification / synthesis
-- integration ideas worth borrowing from adjacent search repos
-  - keep the top-level contract capability-first, while allowing explicit provider override only as a secondary control
-  - add a typed route-decision layer between request parsing and provider execution so routing, caching, and fallback share the same decision object
-  - keep fallback chains explicit for extraction and other multi-step lanes instead of scattering implicit provider switching across adapters
-  - distinguish configured credentials from live provider health so routing can skip dead lanes without pretending they are available
-  - continue favoring one core execution path reused across HTTP and MCP surfaces rather than growing separate implementations
-  - avoid bundling unrelated control-plane surfaces into the core runtime unless a real shared deployment need appears
+  - Google/SERP supplement if justified
+  - browser lane for JS-heavy pages if justified
+  - future social or richer freshness lanes later
+- richer verification and synthesis
 
 ### V2 checklist
 
 - [ ] lightweight LLM router
 - [ ] learned ranking hooks
 - [ ] per-task budget support
-- [ ] provider health tracking
-- [ ] health-aware routing
-- [ ] Grok freshness/social lane
+- [ ] richer health-aware routing beyond static config presence, only if it improves routing decisions materially
+- [ ] Google/SERP supplement decision
+- [ ] browser-lane decision
 - [ ] richer verification / synthesis
-- [ ] typed route-decision model shared by routing, cache policy, and fallback logic
-- [x] explicit provider live-health model separate from static config presence
 - [ ] documented fallback chains for content extract and future structured extract
 
 ---
