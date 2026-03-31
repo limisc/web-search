@@ -513,8 +513,7 @@ async def test_web_extract_rejects_structured_extract_by_default(app, monkeypatc
     assert response.json() == {
         "error": {
             "type": "provider_not_implemented",
-            "message": "Provider not implemented yet: firecrawl structured extract",
-            "provider": "firecrawl",
+            "message": "Structured extract is not implemented yet",
         }
     }
 

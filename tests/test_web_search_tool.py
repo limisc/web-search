@@ -292,12 +292,14 @@ async def test_web_extract_raises_tool_error_for_default_structured_extract(monk
     monkeypatch.setenv("TAVILY_API_KEY", "tavily-key")
     monkeypatch.setenv("TAVILY_BASE_URL", "https://api.tavily.com")
 
-    with pytest.raises(ToolError):
+    with pytest.raises(ToolError) as exc_info:
         await web_extract(
             urls=["https://firecrawl.dev"],
             mode="structured",
             query="Extract company info",
         )
+
+    assert "Structured extract is not implemented yet" in str(exc_info.value)
 
 
 @pytest.mark.asyncio
@@ -305,13 +307,15 @@ async def test_web_extract_raises_tool_error_for_firecrawl_structured_override(m
     monkeypatch.setenv("FIRECRAWL_API_KEY", "test-key")
     monkeypatch.setenv("FIRECRAWL_BASE_URL", "https://api.firecrawl.dev/v2")
 
-    with pytest.raises(ToolError):
+    with pytest.raises(ToolError) as exc_info:
         await web_extract(
             urls=["https://firecrawl.dev"],
             provider="firecrawl",
             mode="structured",
             query="Extract company info",
         )
+
+    assert "Provider not implemented yet: firecrawl structured extract" in str(exc_info.value)
 
 
 @pytest.mark.asyncio

@@ -121,6 +121,7 @@ Current extract behavior is more limited:
 - `mode="content"` with `query` or `max_chunks` prefers Exa when configured, then falls back to Tavily
 - plain `mode="content"` still prefers Tavily, with Exa available as fallback when configured
 - `provider="firecrawl"` supports content extract today
+- default `mode="structured"` returns `provider_not_implemented`
 - no provider currently implements `mode="structured"`
 
 ---

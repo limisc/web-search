@@ -14,6 +14,14 @@ class ExtractService:
     async def run(self, request: ExtractRequest) -> ExtractResponse:
         plan = self.router.plan(request)
 
+        if request.mode == "structured" and not plan.providers:
+            raise ProviderError(
+                "Structured extract is not implemented yet",
+                provider="router",
+                error_type="provider_not_implemented",
+                details={"mode": request.mode},
+            )
+
         last_error: ProviderError | None = None
         for provider_name in plan.providers:
             if not is_provider_available(provider_name):

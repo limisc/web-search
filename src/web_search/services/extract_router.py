@@ -24,7 +24,7 @@ class ExtractRouter:
             return ExtractProviderPlan(route="provider_override", providers=(request.provider,))
 
         if request.mode == "structured":
-            return ExtractProviderPlan(route="single", providers=("firecrawl",))
+            return ExtractProviderPlan(route="single", providers=())
 
         providers = self._content_extract_providers(request)
         route: RouteKind = "fallback_candidate" if len(providers) > 1 else "single"
