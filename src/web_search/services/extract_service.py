@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from web_search.models.requests import ExtractRequest
 from web_search.models.responses import ExtractResponse, ExtractedPage, ResponseMeta
+from web_search.models.routing import ExtractRouteDecision
 from web_search.providers import get_extract_provider, is_extract_provider_available
-from web_search.services.extract_router import ExtractProviderPlan, ExtractRouter
+from web_search.services.extract_router import ExtractRouter
 from web_search.utils.content_cache import ContentCache, cacheable_extract_request, derive_page_for_request
 from web_search.utils.errors import ProviderError
 
@@ -22,9 +23,9 @@ class ExtractService:
         self.router = ExtractRouter()
 
     async def run(self, request: ExtractRequest) -> ExtractResponse:
-        plan = self.router.plan(request)
+        decision = self.router.plan(request)
 
-        if request.mode == "structured" and not plan.providers:
+        if request.mode == "structured" and not decision.providers:
             raise ProviderError(
                 "Structured extract is not implemented yet",
                 provider="router",
@@ -33,12 +34,12 @@ class ExtractService:
             )
 
         if cacheable_extract_request(request) and len(request.urls) == 1:
-            cached_response = await self._run_with_content_cache(request, plan)
+            cached_response = await self._run_with_content_cache(request, decision)
             if cached_response is not None:
                 return cached_response
 
         last_error: ProviderError | None = None
-        for provider_name in plan.providers:
+        for provider_name in decision.providers:
             if not is_extract_provider_available(provider_name):
                 if request.provider == provider_name:
                     get_extract_provider(provider_name)
@@ -46,12 +47,12 @@ class ExtractService:
             provider = get_extract_provider(provider_name)
             try:
                 response = await provider.extract(request)
-                response.meta.route = plan.route
+                response.meta.route = decision.route
                 response.meta.providers_used = [provider_name]
                 return response
             except ProviderError as exc:
                 last_error = exc
-                if plan.route != "fallback_candidate":
+                if not decision.allows_fallback:
                     raise
 
         if last_error is not None:
@@ -61,18 +62,18 @@ class ExtractService:
             "No available providers for extract request",
             provider="router",
             error_type="provider_not_available",
-            details={"mode": request.mode, "providers": list(plan.providers)},
+            details={"mode": request.mode, "providers": list(decision.providers)},
         )
 
     async def _run_with_content_cache(
         self,
         request: ExtractRequest,
-        plan: ExtractProviderPlan,
+        decision: ExtractRouteDecision,
     ) -> ExtractResponse | None:
         last_error: ProviderError | None = None
         url = str(request.urls[0])
 
-        for provider_name in plan.providers:
+        for provider_name in decision.providers:
             if not is_extract_provider_available(provider_name):
                 if request.provider == provider_name:
                     get_extract_provider(provider_name)
@@ -114,13 +115,13 @@ class ExtractService:
                         latency_ms=0,
                         cached=lookup.state in {"fresh", "stale"},
                         cache_state=lookup.state,
-                        route=plan.route,
+                        route=decision.route,
                         providers_used=[provider_name],
                     ),
                 )
             except ProviderError as exc:
                 last_error = exc
-                if plan.route != "fallback_candidate":
+                if not decision.allows_fallback:
                     raise
 
         if last_error is not None:

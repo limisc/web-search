@@ -8,6 +8,7 @@ import pytest
 from web_search.config import clear_settings_cache
 from web_search.models.requests import ExtractRequest
 from web_search.models.responses import ExtractResponse, ExtractedPage, ResponseMeta
+from web_search.models.routing import ExtractRouteDecision
 from web_search.services.extract_service import ExtractService, clear_extract_cache
 from web_search.utils.content_cache import ContentCache, derive_page_for_request, normalize_url_for_cache
 
@@ -216,7 +217,11 @@ async def test_extract_service_uses_content_cache_for_single_url(
 
     monkeypatch.setattr("web_search.services.extract_service.is_extract_provider_available", lambda name: name == "exa")
     monkeypatch.setattr("web_search.services.extract_service.get_extract_provider", lambda name: FakeProvider())
-    monkeypatch.setattr(service.router, "plan", lambda request: type("Plan", (), {"route": "single", "providers": ("exa",)})())
+    monkeypatch.setattr(
+        service.router,
+        "plan",
+        lambda request: ExtractRouteDecision(route="single", providers=("exa",), capability="content_extract"),
+    )
 
     request = ExtractRequest.from_tool_args(
         urls=["https://example.com/page"],

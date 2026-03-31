@@ -1,71 +1,75 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Literal
-
 from web_search.config import get_settings
 from web_search.models.requests import SearchRequest
-
-RouteKind = Literal["single", "fallback_candidate", "provider_override"]
-
-
-@dataclass(frozen=True)
-class ProviderPlan:
-    route: RouteKind
-    search_providers: tuple[str, ...]
-    extract_requested: bool = False
+from web_search.models.routing import RouteKind, SearchRouteDecision
 
 
 class Router:
     def __init__(self) -> None:
         self.settings = get_settings()
 
-    def plan(self, request: SearchRequest) -> ProviderPlan:
+    def plan(self, request: SearchRequest) -> SearchRouteDecision:
+        capability = self._capability_for(request)
         if request.provider:
-            return ProviderPlan(
+            return SearchRouteDecision(
                 route="provider_override",
-                search_providers=(request.provider,),
-                extract_requested=request.extraction,
+                providers=(request.provider,),
+                provider_override_applied=True,
+                reason="explicit provider override",
+                capability=capability,
             )
 
         general_providers = self._general_search_providers()
         general_route: RouteKind = "fallback_candidate" if len(general_providers) > 1 else "single"
 
         if request.intent == "fresh":
-            return ProviderPlan(
+            return SearchRouteDecision(
                 route="fallback_candidate",
-                search_providers=self._fresh_search_providers(general_providers),
-                extract_requested=request.extraction,
+                providers=self._fresh_search_providers(general_providers),
+                reason="fresh intent prefers fresh-search providers",
+                capability=capability,
             )
 
         if request.intent == "docs":
-            return ProviderPlan(
+            return SearchRouteDecision(
                 route="fallback_candidate",
-                search_providers=self._docs_search_providers(general_providers),
-                extract_requested=request.extraction,
+                providers=self._docs_search_providers(general_providers),
+                reason="docs intent prefers authoritative-search providers",
+                capability=capability,
             )
 
         if request.intent == "social":
-            # This lane is part of the public contract but is not natively implemented yet.
-            # Keep the current runtime honest by falling back to currently available providers.
-            return ProviderPlan(
+            return SearchRouteDecision(
                 route="fallback_candidate",
-                search_providers=general_providers,
-                extract_requested=request.extraction,
+                providers=general_providers,
+                reason="social lane currently falls back to general providers",
+                capability=capability,
             )
 
         if request.verification_level == "light":
-            return ProviderPlan(
+            return SearchRouteDecision(
                 route="fallback_candidate",
-                search_providers=general_providers,
-                extract_requested=request.extraction,
+                providers=general_providers,
+                reason="light verification keeps a fallback candidate list",
+                capability=capability,
             )
 
-        return ProviderPlan(
+        return SearchRouteDecision(
             route=general_route,
-            search_providers=general_providers,
-            extract_requested=request.extraction,
+            providers=general_providers,
+            reason="general intent uses configured broad-search providers",
+            capability=capability,
         )
+
+    def _capability_for(self, request: SearchRequest) -> str:
+        if request.intent == "docs":
+            return "authoritative_search"
+        if request.intent == "fresh":
+            return "fresh_search"
+        if request.intent == "social":
+            return "social_search"
+        return "broad_search"
 
     def _general_search_providers(self) -> tuple[str, ...]:
         providers: list[str] = []

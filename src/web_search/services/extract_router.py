@@ -1,34 +1,46 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Literal
-
 from web_search.config import get_settings
 from web_search.models.requests import ExtractRequest
-
-RouteKind = Literal["single", "fallback_candidate", "provider_override"]
-
-
-@dataclass(frozen=True)
-class ExtractProviderPlan:
-    route: RouteKind
-    providers: tuple[str, ...]
+from web_search.models.routing import ExtractRouteDecision, RouteKind
 
 
 class ExtractRouter:
     def __init__(self) -> None:
         self.settings = get_settings()
 
-    def plan(self, request: ExtractRequest) -> ExtractProviderPlan:
+    def plan(self, request: ExtractRequest) -> ExtractRouteDecision:
         if request.provider:
-            return ExtractProviderPlan(route="provider_override", providers=(request.provider,))
+            return ExtractRouteDecision(
+                route="provider_override",
+                providers=(request.provider,),
+                provider_override_applied=True,
+                reason="explicit provider override",
+                capability=self._capability_for(request),
+            )
 
         if request.mode == "structured":
-            return ExtractProviderPlan(route="single", providers=())
+            return ExtractRouteDecision(
+                route="single",
+                providers=(),
+                reason="structured extract has no default execution lane yet",
+                capability="structured_extract",
+            )
 
         providers = self._content_extract_providers(request)
         route: RouteKind = "fallback_candidate" if len(providers) > 1 else "single"
-        return ExtractProviderPlan(route=route, providers=providers)
+        return ExtractRouteDecision(
+            route=route,
+            providers=providers,
+            reason="content extract uses configured provider order",
+            capability="content_extract",
+        )
+
+    @staticmethod
+    def _capability_for(request: ExtractRequest) -> str:
+        if request.mode == "structured":
+            return "structured_extract"
+        return "content_extract"
 
     def _content_extract_providers(self, request: ExtractRequest) -> tuple[str, ...]:
         providers: list[str] = []
