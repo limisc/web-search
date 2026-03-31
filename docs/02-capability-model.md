@@ -20,6 +20,7 @@ At the moment:
 - Tavily-backed search and extract are implemented
 - Brave-backed web search is implemented
 - Exa-backed web search is implemented
+- NewsAPI-backed fresh/news search is implemented
 - multi-provider routing semantics are still mostly design-time abstractions
 - provider tables below are planning aids unless explicitly marked as implemented
 
@@ -84,7 +85,7 @@ Use for:
 | User need | Public intent / API | Internal capability | Likely providers over time |
 |---|---|---|---|
 | official docs / API reference / canonical product info | `web_search(intent="docs")` | `authoritative_search` | Exa first, possibly others later |
-| recent changes / recent news / latest updates | `web_search(intent="fresh")` | `fresh_search` | Grok, Brave, freshness-oriented backends |
+| recent changes / recent news / latest updates | `web_search(intent="fresh")` | `fresh_search` | NewsAPI first today, Grok or others later |
 | broad fact gathering / normal web discovery | `web_search(intent="general")` | `broad_search` | Tavily, Brave, maybe Exa in some cases |
 | social / discourse-heavy lookup | `web_search(intent="social")` | `social_search` | Grok, future social-aware providers |
 | known URL, fetch readable content | `web_extract(mode="content")` | `content_extract` | Tavily, Firecrawl, Exa contents |
@@ -100,7 +101,8 @@ This table defines semantic lanes, not current implementation guarantees.
 |---|---|---|
 | Exa | `authoritative_search`, `broad_search`, `content_extract` | implemented for web search and content extract |
 | Tavily | `broad_search`, `content_extract` | implemented |
-| Brave | `broad_search` | implemented for web search; freshness-specialized lanes still planned |
+| Brave | `broad_search` | implemented for web search |
+| NewsAPI | `fresh_search` | implemented for fresh/news search |
 | Firecrawl | `content_extract`, `structured_extract` | content extract is implemented by provider override; structured extract is still disabled |
 | Grok | `fresh_search`, `social_search` | planned |
 
@@ -114,7 +116,7 @@ Because only part of the multi-provider graph is really implemented right now, a
 |---|---|---|
 | `general` | Tavily or Brave, with broader routing later | Brave first when configured, otherwise Tavily |
 | `docs` | Exa-oriented lane later | Exa first when configured, then Brave or Tavily fallback |
-| `fresh` | Grok + Brave lane later | Brave or Tavily fallback, no news-specialized lane yet |
+| `fresh` | Grok + Brave lane later | NewsAPI first when configured, then Brave or Tavily fallback |
 | `social` | Grok-oriented lane later | Brave or Tavily fallback, no social-specialized lane yet |
 
 Current extract behavior is more limited:

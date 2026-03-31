@@ -34,6 +34,7 @@ Implemented today:
 - Tavily-backed extract
 - Brave-backed web search
 - Exa-backed web search
+- NewsAPI-backed fresh/news search
 - Exa-backed content extract
 - Firecrawl-backed content extract with provider override
 - thin MCP facade
@@ -74,6 +75,7 @@ cp .env.example .env
 # then edit .env and set TAVILY_API_KEY
 # optionally set BRAVE_SEARCH_API_KEY for Brave web search
 # optionally set EXA_API_KEY for Exa web search
+# optionally set NEWSAPI_API_KEY for NewsAPI fresh/news search
 # optionally set FIRECRAWL_API_KEY for Firecrawl extract
 ```
 
@@ -140,6 +142,7 @@ cp .env.example .env
 # then set TAVILY_API_KEY in .env
 # optionally set BRAVE_SEARCH_API_KEY in .env
 # optionally set EXA_API_KEY in .env
+# optionally set NEWSAPI_API_KEY in .env
 # optionally set FIRECRAWL_API_KEY in .env
 uv sync --extra dev
 ./scripts/local_service.sh start live
@@ -217,6 +220,7 @@ src/web_search/
     brave.py
     exa.py
     firecrawl.py
+    newsapi.py
     tavily.py
   models/
     requests.py

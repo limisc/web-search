@@ -19,6 +19,8 @@ def clear_caches(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("BRAVE_BASE_URL", "https://api.search.brave.com/res/v1")
     monkeypatch.setenv("EXA_API_KEY", "")
     monkeypatch.setenv("EXA_BASE_URL", "https://api.exa.ai")
+    monkeypatch.setenv("NEWSAPI_API_KEY", "")
+    monkeypatch.setenv("NEWSAPI_BASE_URL", "https://newsapi.org/v2")
     monkeypatch.setenv("FIRECRAWL_API_KEY", "")
     monkeypatch.setenv("FIRECRAWL_BASE_URL", "https://api.firecrawl.dev/v2")
     clear_settings_cache()
@@ -165,6 +167,49 @@ async def test_web_search_returns_budget_exceeded_for_tavily_rate_limit(app, mon
             "provider": "tavily",
         }
     }
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_web_search_routes_fresh_intent_to_newsapi_when_configured(app, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("NEWSAPI_API_KEY", "test-key")
+    monkeypatch.setenv("NEWSAPI_BASE_URL", "https://newsapi.org/v2")
+    monkeypatch.setenv("BRAVE_SEARCH_API_KEY", "brave-key")
+    monkeypatch.setenv("BRAVE_BASE_URL", "https://api.search.brave.com/res/v1")
+
+    respx.get("https://newsapi.org/v2/everything").mock(
+        return_value=Response(
+            200,
+            json={
+                "status": "ok",
+                "totalResults": 1,
+                "articles": [
+                    {
+                        "source": {"id": "techcrunch", "name": "TechCrunch"},
+                        "author": "TC",
+                        "title": "Fresh headline",
+                        "description": "Latest product update",
+                        "url": "https://example.com/fresh-headline",
+                        "publishedAt": "2026-03-30T12:00:00Z",
+                        "content": "Longer article body",
+                    }
+                ],
+            },
+        )
+    )
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://testserver") as client:
+        response = await client.post(
+            "/api/web_search",
+            json={"query": "latest startup funding", "intent": "fresh", "max_results": 3},
+        )
+
+    body = response.json()
+    assert response.status_code == 200
+    assert body["provider"] == "newsapi"
+    assert body["meta"]["route"] == "fallback_candidate:low_cost"
+    assert body["results"][0]["title"] == "Fresh headline"
+    assert body["results"][0]["source_type"] == "news"
 
 
 @pytest.mark.asyncio

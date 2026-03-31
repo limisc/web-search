@@ -18,6 +18,7 @@ Important reality checks:
 - Tavily-backed search and extract are implemented
 - Brave-backed web search is implemented
 - Exa-backed web search is implemented
+- NewsAPI-backed fresh/news search is implemented
 - Exa-backed content extract is implemented
 - Firecrawl-backed content extract is available by provider override
 - structured extract is still disabled until a sane-cost path is chosen
@@ -73,6 +74,7 @@ Goal: stabilize the public contract, HTTP API, MCP thin facade, and router/plann
 - [x] Tavily provider adapted to the new request model
 - [x] Brave web-search adapter
 - [x] Exa web-search adapter
+- [x] NewsAPI fresh-search adapter
 - [x] Firecrawl content extract adapter
 - [ ] structured extract execution
 - [ ] provider capability matrix finalized

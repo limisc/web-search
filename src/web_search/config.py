@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     brave_base_url: str = Field(default="https://api.search.brave.com/res/v1", alias="BRAVE_BASE_URL")
     exa_api_key: str | None = Field(default=None, alias="EXA_API_KEY")
     exa_base_url: str = Field(default="https://api.exa.ai", alias="EXA_BASE_URL")
+    newsapi_api_key: str | None = Field(default=None, alias="NEWSAPI_API_KEY")
+    newsapi_base_url: str = Field(default="https://newsapi.org/v2", alias="NEWSAPI_BASE_URL")
     firecrawl_api_key: str | None = Field(default=None, alias="FIRECRAWL_API_KEY")
     firecrawl_base_url: str = Field(default="https://api.firecrawl.dev/v2", alias="FIRECRAWL_BASE_URL")
     request_timeout_seconds: float = Field(default=20.0, alias="REQUEST_TIMEOUT_SECONDS")

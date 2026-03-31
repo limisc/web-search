@@ -34,7 +34,7 @@ class Router:
         if request.intent == "fresh":
             return ProviderPlan(
                 route="fallback_candidate",
-                search_providers=general_providers,
+                search_providers=self._fresh_search_providers(general_providers),
                 extract_requested=request.extraction,
             )
 
@@ -81,6 +81,15 @@ class Router:
         providers: list[str] = []
         if self.settings.exa_api_key:
             providers.append("exa")
+        for provider in general_providers:
+            if provider not in providers:
+                providers.append(provider)
+        return tuple(providers)
+
+    def _fresh_search_providers(self, general_providers: tuple[str, ...]) -> tuple[str, ...]:
+        providers: list[str] = []
+        if self.settings.newsapi_api_key:
+            providers.append("newsapi")
         for provider in general_providers:
             if provider not in providers:
                 providers.append(provider)

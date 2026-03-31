@@ -29,6 +29,7 @@ At the moment:
 - Tavily-backed search and extract are implemented
 - Brave-backed web search is implemented
 - Exa-backed web search is implemented
+- NewsAPI-backed fresh/news search is implemented
 - routing abstractions exist, but they should be read as internal structure, not as proof of full multi-provider support
 - labels such as `balanced`, `high_reliability`, or future verification levels should be read as design targets unless explicitly marked as implemented
 
@@ -91,6 +92,7 @@ Unified source-discovery entrypoint.
 - Tavily-backed search is implemented
 - Brave-backed web search is implemented
 - Exa-backed web search is implemented
+- NewsAPI-backed fresh/news search is implemented
 - the public contract is intentionally broader than today's execution reality
 - generic locale and safety hints now live under `preferences`
 - Brave-specific knobs now live under `provider_options.brave`
@@ -103,7 +105,7 @@ Unified source-discovery entrypoint.
 - `provider_options.brave` requires `provider="brave"`
 - `docs` now prefers Exa when configured, then falls back to Brave or Tavily
 - `social` is still a contract lane without a social-specialized provider yet
-- `fresh` still routes through the currently configured general providers, and there is no dedicated news-specialized lane yet
+- `fresh` now prefers NewsAPI when configured, then falls back to the currently configured general providers
 - `verification_level` is currently a contract field, not proof of real cross-provider verification
 - `provider` override exists mainly to force an available path during the transition period
 

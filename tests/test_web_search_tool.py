@@ -21,6 +21,8 @@ def clear_caches(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("BRAVE_BASE_URL", "https://api.search.brave.com/res/v1")
     monkeypatch.setenv("EXA_API_KEY", "")
     monkeypatch.setenv("EXA_BASE_URL", "https://api.exa.ai")
+    monkeypatch.setenv("NEWSAPI_API_KEY", "")
+    monkeypatch.setenv("NEWSAPI_BASE_URL", "https://newsapi.org/v2")
     monkeypatch.setenv("FIRECRAWL_API_KEY", "")
     monkeypatch.setenv("FIRECRAWL_BASE_URL", "https://api.firecrawl.dev/v2")
     clear_settings_cache()
@@ -114,6 +116,37 @@ async def test_web_search_supports_brave_goggles(monkeypatch: pytest.MonkeyPatch
     assert result["provider"] == "brave"
     assert captured["method"] == "POST"
     assert '"goggles":["https://example.com/dev-docs.goggle","$boost=3,site=docs.python.org"]' in str(captured["body"])
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_web_search_supports_newsapi_provider_override(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("NEWSAPI_API_KEY", "test-key")
+    monkeypatch.setenv("NEWSAPI_BASE_URL", "https://newsapi.org/v2")
+
+    respx.get("https://newsapi.org/v2/everything").mock(
+        return_value=Response(
+            200,
+            json={
+                "status": "ok",
+                "totalResults": 1,
+                "articles": [
+                    {
+                        "source": {"id": "techcrunch", "name": "TechCrunch"},
+                        "title": "Fresh headline",
+                        "description": "Latest product update",
+                        "url": "https://example.com/fresh-headline",
+                        "publishedAt": "2026-03-30T12:00:00Z",
+                    }
+                ],
+            },
+        )
+    )
+
+    result = await web_search(query="hello", provider="newsapi", intent="fresh")
+
+    assert result["provider"] == "newsapi"
+    assert result["results"][0]["title"] == "Fresh headline"
 
 
 @pytest.mark.asyncio
