@@ -39,6 +39,7 @@ class ResponseMeta(BaseModel):
     providers_used: list[str] = Field(default_factory=list)
     verification_level: VerificationLevel = "none"
     verification_summary: dict[str, int] | None = None
+    partial_failures: list[dict[str, str]] = Field(default_factory=list)
 
 
 def apply_route_metadata(

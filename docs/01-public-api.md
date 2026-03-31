@@ -116,6 +116,7 @@ Unified source-discovery entrypoint.
 - `fresh` now prefers NewsAPI when configured, then falls back to the currently configured general providers
 - `verification_level` is currently a contract field, not proof of full cross-provider verification
 - `verification_level="light"` now performs a small verifier step by canonicalizing URLs and collapsing duplicate search hits that normalize to the same URL
+- successful fallback responses can now expose `meta.partial_failures` when an earlier provider failed but a later provider still returned usable results
 - `provider` override exists mainly to force an available path during the transition period
 - if a caller overrides `provider` to one that does not implement the requested capability, the service returns `provider_not_supported`
 - provider failure responses may include `error.details` with route-decision context such as route, capability, provider override state, configured provider order, and attempted provider

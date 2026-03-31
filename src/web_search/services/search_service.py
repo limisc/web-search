@@ -5,6 +5,7 @@ import time
 from web_search.models.requests import SearchRequest
 from web_search.models.responses import SearchResponse, apply_route_metadata
 from web_search.providers import get_search_provider, is_search_provider_available
+from web_search.services.partial_results import attach_partial_results_metadata
 from web_search.services.planner import Planner
 from web_search.services.provider_health import get_provider_health
 from web_search.services.router import Router
@@ -41,6 +42,7 @@ class SearchService:
 
         chosen_provider_name: str | None = None
         last_error: ProviderError | None = None
+        failed_attempts: list[ProviderError] = []
         for provider_name in decision.providers:
             if not is_search_provider_available(provider_name):
                 if request.provider == provider_name:
@@ -62,10 +64,12 @@ class SearchService:
                 response.meta.latency_ms = int((time.perf_counter() - started) * 1000)
                 if request.verification_level == "light":
                     response = apply_light_verification(response)
+                response = attach_partial_results_metadata(response, failed_attempts=failed_attempts)
                 _SEARCH_CACHE.set(cache_key, response.model_copy(deep=True))
                 return response
             except ProviderError as exc:
                 last_error = exc.with_details(**decision_details, attempted_provider=provider_name)
+                failed_attempts.append(last_error)
                 if not decision.allows_fallback:
                     raise last_error
 

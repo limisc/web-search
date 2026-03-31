@@ -186,7 +186,7 @@ Goal: improve result quality with lightweight verification and normalization, wi
 - [x] verification levels become real behavior, not just contract placeholders
 - [ ] duplicate collapse / canonical URL handling
 - [ ] verifier module with lightweight diversity and agreement signals
-- [ ] partial-results semantics become explicit behavior
+- [x] partial-results semantics become explicit behavior
 - [ ] decide whether any minimal state store is truly needed before adding monitor or diff machinery
 
 ---

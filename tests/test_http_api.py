@@ -279,6 +279,7 @@ async def test_web_search_routes_fresh_intent_to_newsapi_when_configured(app, mo
     assert body["meta"]["capability"] == "fresh_search"
     assert body["meta"]["provider_override_applied"] is False
     assert body["meta"]["verification_summary"] is None
+    assert body["meta"]["partial_failures"] == []
     assert body["results"][0]["title"] == "Fresh headline"
     assert body["results"][0]["source_type"] == "news"
 
@@ -322,6 +323,49 @@ async def test_web_search_light_verification_dedupes_canonical_urls(app, monkeyp
     assert len(body["results"]) == 1
     assert body["results"][0]["url"] == "https://example.com/docs"
     assert body["meta"]["verification_summary"] == {"canonicalized_urls": 1, "duplicates_removed": 1}
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_web_search_returns_partial_failure_metadata_when_fallback_succeeds(app, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("BRAVE_SEARCH_API_KEY", "brave-key")
+    monkeypatch.setenv("BRAVE_BASE_URL", "https://api.search.brave.com/res/v1")
+    monkeypatch.setenv("TAVILY_API_KEY", "tavily-key")
+    monkeypatch.setenv("TAVILY_BASE_URL", "https://api.tavily.com")
+
+    respx.get("https://api.search.brave.com/res/v1/web/search").mock(return_value=Response(503, json={"error": "unavailable"}))
+    respx.post("https://api.tavily.com/search").mock(
+        return_value=Response(
+            200,
+            json={
+                "results": [
+                    {
+                        "title": "Fallback result",
+                        "url": "https://example.com/fallback",
+                        "content": "ok",
+                        "score": 0.7,
+                    }
+                ]
+            },
+        )
+    )
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://testserver") as client:
+        response = await client.post(
+            "/api/web_search",
+            json={"query": "fallback test", "provider": None},
+        )
+
+    body = response.json()
+    assert response.status_code == 200
+    assert body["provider"] == "tavily"
+    assert body["meta"]["partial_failures"] == [
+        {
+            "provider": "brave",
+            "error_type": "provider_unavailable",
+            "message": "Brave Search request failed: Server error '503 Service Unavailable' for url 'https://api.search.brave.com/res/v1/web/search?q=fallback+test&count=5&result_filter=web'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503",
+        }
+    ]
 
 
 @pytest.mark.asyncio
