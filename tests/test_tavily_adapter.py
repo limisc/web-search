@@ -142,7 +142,9 @@ async def test_tavily_extract_rejects_structured_mode_for_now(monkeypatch: pytes
 
     provider = TavilyProvider()
     with pytest.raises(ProviderError) as exc_info:
-        await provider.extract(ExtractRequest(urls=["https://example.com"], provider="tavily", mode="structured"))
+        await provider.extract(
+            ExtractRequest.from_tool_args(urls=["https://example.com"], provider="tavily", mode="structured")
+        )
 
     assert exc_info.value.error_type == "provider_not_implemented"
     assert exc_info.value.provider == "tavily"

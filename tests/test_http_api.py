@@ -7,6 +7,7 @@ from httpx import ASGITransport, AsyncClient, Response
 from web_search.config import clear_settings_cache
 from web_search.providers import clear_provider_cache
 from web_search.server import build_http_app
+from web_search.services.extract_service import clear_extract_cache
 from web_search.services.search_service import clear_search_cache
 
 
@@ -26,6 +27,7 @@ def clear_caches(monkeypatch: pytest.MonkeyPatch) -> None:
     clear_settings_cache()
     clear_provider_cache()
     clear_search_cache()
+    clear_extract_cache()
 
 
 @pytest.fixture
@@ -120,6 +122,44 @@ async def test_web_search_returns_invalid_request_for_bad_json(app) -> None:
         "error": {
             "type": "invalid_request",
             "message": "Request body must be valid JSON",
+        }
+    }
+
+
+
+
+@pytest.mark.asyncio
+async def test_web_search_rejects_firecrawl_as_unsupported_search_provider(app) -> None:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://testserver") as client:
+        response = await client.post(
+            "/api/web_search",
+            json={"query": "hello", "provider": "firecrawl"},
+        )
+
+    assert response.status_code == 400
+    assert response.json() == {
+        "error": {
+            "type": "provider_not_supported",
+            "message": "Unsupported search provider: firecrawl",
+            "provider": "firecrawl",
+        }
+    }
+
+
+@pytest.mark.asyncio
+async def test_web_extract_rejects_brave_as_unsupported_extract_provider(app) -> None:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://testserver") as client:
+        response = await client.post(
+            "/api/web_extract",
+            json={"urls": ["https://example.com/page"], "provider": "brave"},
+        )
+
+    assert response.status_code == 400
+    assert response.json() == {
+        "error": {
+            "type": "provider_not_supported",
+            "message": "Unsupported extract provider: brave",
+            "provider": "brave",
         }
     }
 

@@ -41,9 +41,9 @@ Implemented today:
 - HTTP APIs
 - router / planner skeleton
 - query cache
+- URL content cache with stale-while-revalidate semantics for single-URL content extract
 
 Not implemented yet:
-- Firecrawl-backed search
 - Firecrawl-backed structured extract
 - default-routed Firecrawl content extract lane
 - Grok adapters

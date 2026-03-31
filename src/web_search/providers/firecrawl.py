@@ -6,12 +6,15 @@ import time
 from typing import Any
 
 import httpx
+from pydantic import HttpUrl, TypeAdapter
 
 from web_search.config import get_settings
 from web_search.logging import get_logger
-from web_search.models.requests import ExtractRequest, SearchRequest
-from web_search.models.responses import ExtractResponse, ExtractedPage, ResponseMeta, SearchResponse
+from web_search.models.requests import ExtractRequest
+from web_search.models.responses import ExtractResponse, ExtractedPage, ResponseMeta
 from web_search.utils.errors import ProviderError
+
+_HTTP_URL = TypeAdapter(HttpUrl)
 
 
 class FirecrawlProvider:
@@ -21,14 +24,6 @@ class FirecrawlProvider:
         self.settings = get_settings()
         self.logger = get_logger(__name__)
 
-    async def search(self, request: SearchRequest) -> SearchResponse:
-        raise ProviderError(
-            "Provider not implemented yet: firecrawl search",
-            provider=self.name,
-            error_type="provider_not_implemented",
-            details={"intent": request.intent},
-        )
-
     async def extract(self, request: ExtractRequest) -> ExtractResponse:
         if request.mode != "content":
             raise ProviderError(
@@ -37,21 +32,23 @@ class FirecrawlProvider:
                 error_type="provider_not_implemented",
                 details={"mode": request.mode},
             )
+
         self._ensure_configured()
         return await self._extract_content(request)
 
     async def _extract_content(self, request: ExtractRequest) -> ExtractResponse:
         started = time.perf_counter()
         pages: list[ExtractedPage] = []
+
         for url in request.urls:
             url_str = str(url)
-            data = await self._request("POST", "/scrape", json_body=self._scrape_body_for(url_str, request))
+            data = await self._post_scrape(self._scrape_body_for(url_str))
             item = self._extract_page(data)
             if item is None:
                 continue
             pages.append(
                 ExtractedPage(
-                    url=self._page_url_for(item, url_str),
+                    url=_HTTP_URL.validate_python(self._page_url_for(item, url_str)),
                     title=self._title_for(item),
                     content=self._content_for(item, request),
                     excerpt=self._excerpt_for(item, request),
@@ -75,13 +72,7 @@ class FirecrawlProvider:
             meta=ResponseMeta(latency_ms=latency_ms, providers_used=[self.name]),
         )
 
-    async def _request(
-        self,
-        method: str,
-        path: str,
-        *,
-        json_body: dict[str, Any] | None = None,
-    ) -> dict[str, Any]:
+    async def _post_scrape(self, body: dict[str, Any]) -> dict[str, Any]:
         headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {self.settings.firecrawl_api_key or ''}",
@@ -94,13 +85,11 @@ class FirecrawlProvider:
         async with httpx.AsyncClient(timeout=timeout) as client:
             for attempt in range(1, self.settings.retry_max_attempts + 1):
                 try:
-                    response = await client.request(method, f"{base_url}{path}", json=json_body, headers=headers)
+                    response = await client.post(f"{base_url}/scrape", json=body, headers=headers)
                     response.raise_for_status()
                     self.logger.info(
-                        "provider_request_succeeded provider=%s method=%s path=%s status_code=%s attempt=%s",
+                        "provider_request_succeeded provider=%s path=/scrape status_code=%s attempt=%s",
                         self.name,
-                        method,
-                        path,
                         response.status_code,
                         attempt,
                     )
@@ -135,10 +124,8 @@ class FirecrawlProvider:
                     last_error_type = "provider_connection_error"
 
                 self.logger.warning(
-                    "provider_request_retry provider=%s method=%s path=%s attempt=%s error_type=%s error=%s",
+                    "provider_request_retry provider=%s path=/scrape attempt=%s error_type=%s error=%s",
                     self.name,
-                    method,
-                    path,
                     attempt,
                     last_error_type,
                     last_error,
@@ -147,10 +134,8 @@ class FirecrawlProvider:
                     await asyncio.sleep(0.25 * attempt)
 
         self.logger.error(
-            "provider_request_failed provider=%s method=%s path=%s error_type=%s attempts=%s error=%s",
+            "provider_request_failed provider=%s path=/scrape error_type=%s attempts=%s error=%s",
             self.name,
-            method,
-            path,
             last_error_type,
             self.settings.retry_max_attempts,
             last_error,
@@ -159,7 +144,7 @@ class FirecrawlProvider:
             f"Firecrawl request failed: {last_error}",
             provider=self.name,
             error_type=last_error_type,
-            details={"path": path, "method": method, "attempts": self.settings.retry_max_attempts},
+            details={"path": "/scrape", "attempts": self.settings.retry_max_attempts},
         ) from last_error
 
     def _ensure_configured(self) -> None:
@@ -172,13 +157,12 @@ class FirecrawlProvider:
             )
 
     @staticmethod
-    def _scrape_body_for(url: str, request: ExtractRequest) -> dict[str, Any]:
-        body: dict[str, Any] = {
+    def _scrape_body_for(url: str) -> dict[str, Any]:
+        return {
             "url": url,
             "formats": ["markdown"],
             "onlyMainContent": True,
         }
-        return body
 
     @staticmethod
     def _extract_page(data: dict[str, Any]) -> dict[str, Any] | None:

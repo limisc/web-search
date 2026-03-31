@@ -7,6 +7,7 @@ from httpx import ConnectError, Request, Response
 
 from web_search.config import clear_settings_cache
 from web_search.providers import clear_provider_cache
+from web_search.services.extract_service import clear_extract_cache
 from web_search.services.search_service import clear_search_cache
 from web_search.tools.web_extract import web_extract
 from web_search.tools.web_search import web_search
@@ -28,6 +29,7 @@ def clear_caches(monkeypatch: pytest.MonkeyPatch) -> None:
     clear_settings_cache()
     clear_provider_cache()
     clear_search_cache()
+    clear_extract_cache()
 
 
 @pytest.mark.asyncio
@@ -57,6 +59,24 @@ async def test_web_search_supports_brave_provider_override(monkeypatch: pytest.M
 
     assert result["provider"] == "brave"
     assert result["results"][0]["title"] == "Model Context Protocol"
+
+
+
+
+@pytest.mark.asyncio
+async def test_web_search_rejects_unsupported_firecrawl_provider() -> None:
+    with pytest.raises(ToolError) as exc_info:
+        await web_search(query="hello", provider="firecrawl")
+
+    assert "Unsupported search provider: firecrawl" in str(exc_info.value)
+
+
+@pytest.mark.asyncio
+async def test_web_extract_rejects_unsupported_brave_provider() -> None:
+    with pytest.raises(ToolError) as exc_info:
+        await web_extract(urls=["https://example.com/page"], provider="brave")
+
+    assert "Unsupported extract provider: brave" in str(exc_info.value)
 
 
 @pytest.mark.asyncio

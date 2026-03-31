@@ -5,7 +5,7 @@ import respx
 from httpx import ConnectError, Request, Response
 
 from web_search.config import clear_settings_cache
-from web_search.models.requests import ExtractRequest, SearchRequest
+from web_search.models.requests import ExtractRequest
 from web_search.providers import clear_provider_cache
 from web_search.providers.firecrawl import FirecrawlProvider
 from web_search.services.search_service import clear_search_cache
@@ -45,7 +45,7 @@ async def test_firecrawl_extract_normalizes_results(monkeypatch: pytest.MonkeyPa
 
     provider = FirecrawlProvider()
     response = await provider.extract(
-        ExtractRequest(
+        ExtractRequest.from_tool_args(
             urls=["https://modelcontextprotocol.io/docs/getting-started/intro"],
             provider="firecrawl",
             query="MCP details",
@@ -83,7 +83,7 @@ async def test_firecrawl_extract_respects_text_format(monkeypatch: pytest.Monkey
 
     provider = FirecrawlProvider()
     response = await provider.extract(
-        ExtractRequest(
+        ExtractRequest.from_tool_args(
             urls=["https://example.com/page"],
             provider="firecrawl",
             format="text",
@@ -107,13 +107,16 @@ async def test_firecrawl_extract_maps_supported_params(monkeypatch: pytest.Monke
     def handler(request: Request) -> Response:
         captured["body"] = request.content.decode("utf-8")
         captured["authorization"] = request.headers.get("Authorization")
-        return Response(200, json={"success": True, "data": {"markdown": "Body", "metadata": {"sourceURL": "https://example.com"}}})
+        return Response(
+            200,
+            json={"success": True, "data": {"markdown": "Body", "metadata": {"sourceURL": "https://example.com"}}},
+        )
 
     respx.post("https://api.firecrawl.dev/v2/scrape").mock(side_effect=handler)
 
     provider = FirecrawlProvider()
     await provider.extract(
-        ExtractRequest(
+        ExtractRequest.from_tool_args(
             urls=["https://example.com/page"],
             provider="firecrawl",
             query="key findings",
@@ -142,7 +145,9 @@ async def test_firecrawl_extract_retries_connection_errors(monkeypatch: pytest.M
     ]
 
     provider = FirecrawlProvider()
-    response = await provider.extract(ExtractRequest(urls=["https://example.com"], provider="firecrawl"))
+    response = await provider.extract(
+        ExtractRequest.from_tool_args(urls=["https://example.com"], provider="firecrawl")
+    )
 
     assert len(response.pages) == 1
 
@@ -157,7 +162,7 @@ async def test_firecrawl_extract_maps_rate_limit_to_budget_exceeded(monkeypatch:
 
     provider = FirecrawlProvider()
     with pytest.raises(ProviderError) as exc_info:
-        await provider.extract(ExtractRequest(urls=["https://example.com"], provider="firecrawl"))
+        await provider.extract(ExtractRequest.from_tool_args(urls=["https://example.com"], provider="firecrawl"))
 
     assert exc_info.value.error_type == "budget_exceeded"
 
@@ -168,19 +173,9 @@ async def test_firecrawl_extract_raises_not_configured_without_key(monkeypatch: 
 
     provider = FirecrawlProvider()
     with pytest.raises(ProviderError) as exc_info:
-        await provider.extract(ExtractRequest(urls=["https://example.com"], provider="firecrawl"))
+        await provider.extract(ExtractRequest.from_tool_args(urls=["https://example.com"], provider="firecrawl"))
 
     assert exc_info.value.error_type == "provider_not_configured"
-
-
-@pytest.mark.asyncio
-async def test_firecrawl_search_is_reserved_but_not_implemented_yet() -> None:
-    provider = FirecrawlProvider()
-    with pytest.raises(ProviderError) as exc_info:
-        await provider.search(SearchRequest(query="hello", provider="firecrawl"))
-
-    assert exc_info.value.error_type == "provider_not_implemented"
-    assert exc_info.value.provider == "firecrawl"
 
 
 @pytest.mark.asyncio
@@ -190,7 +185,9 @@ async def test_firecrawl_extract_rejects_structured_mode_for_now(monkeypatch: py
 
     provider = FirecrawlProvider()
     with pytest.raises(ProviderError) as exc_info:
-        await provider.extract(ExtractRequest(urls=["https://example.com"], provider="firecrawl", mode="structured"))
+        await provider.extract(
+            ExtractRequest.from_tool_args(urls=["https://example.com"], provider="firecrawl", mode="structured")
+        )
 
     assert exc_info.value.error_type == "provider_not_implemented"
     assert exc_info.value.provider == "firecrawl"

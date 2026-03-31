@@ -5,7 +5,7 @@ import respx
 from httpx import ConnectError, Request, Response
 
 from web_search.config import clear_settings_cache
-from web_search.models.requests import ExtractRequest, SearchRequest
+from web_search.models.requests import ExtractRequest, SearchPreferences, SearchRequest
 from web_search.providers import clear_provider_cache
 from web_search.providers.exa import ExaProvider
 from web_search.services.search_service import clear_search_cache
@@ -78,7 +78,7 @@ async def test_exa_search_maps_supported_params(monkeypatch: pytest.MonkeyPatch)
             query="python asyncio",
             intent="docs",
             provider="exa",
-            preferences={"country": "us", "safesearch": "strict"},
+            preferences=SearchPreferences(country="us", safesearch="strict"),
             include_domains=["docs.python.org"],
             exclude_domains=["reddit.com"],
             freshness="week",
@@ -209,7 +209,7 @@ async def test_exa_extract_normalizes_content_results(monkeypatch: pytest.Monkey
 
     provider = ExaProvider()
     response = await provider.extract(
-        ExtractRequest(
+        ExtractRequest.from_tool_args(
             urls=["https://modelcontextprotocol.io/docs/getting-started/intro"],
             provider="exa",
             query="intro",
@@ -243,7 +243,7 @@ async def test_exa_extract_maps_supported_params(monkeypatch: pytest.MonkeyPatch
 
     provider = ExaProvider()
     await provider.extract(
-        ExtractRequest(
+        ExtractRequest.from_tool_args(
             urls=["https://example.com/page"],
             provider="exa",
             query="key findings",
@@ -265,7 +265,7 @@ async def test_exa_extract_rejects_structured_mode_for_now(monkeypatch: pytest.M
     provider = ExaProvider()
     with pytest.raises(ProviderError) as exc_info:
         await provider.extract(
-            ExtractRequest(urls=["https://example.com"], provider="exa", mode="structured")
+            ExtractRequest.from_tool_args(urls=["https://example.com"], provider="exa", mode="structured")
         )
 
     assert exc_info.value.error_type == "provider_not_implemented"

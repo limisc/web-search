@@ -16,7 +16,3 @@ class WebExtractProvider(Protocol):
     name: str
 
     async def extract(self, request: ExtractRequest) -> ExtractResponse: ...
-
-
-class SearchProvider(WebSearchProvider, WebExtractProvider, Protocol):
-    """Combined provider protocol for providers that support both search and extract."""

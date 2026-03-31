@@ -24,6 +24,6 @@ def test_search_request_normalizes_domain_shorthand_into_include_domains() -> No
 
 
 def test_extract_request_normalizes_blank_query_to_none() -> None:
-    request = ExtractRequest(urls=["https://example.com/page"], query="   ")
+    request = ExtractRequest.from_tool_args(urls=["https://example.com/page"], query="   ")
 
     assert request.query is None

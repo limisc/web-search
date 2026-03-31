@@ -5,14 +5,17 @@
 The current stable public surface is intentionally small.
 
 ### HTTP
+
 - `POST /api/web_search`
 - `POST /api/web_extract`
 
 ### MCP
+
 - `web_search`
 - `web_extract`
 
 Everything outside this set should be treated as one of:
+
 - internal implementation detail
 - future roadmap concept
 - experimental code path
@@ -26,6 +29,7 @@ Unless explicitly documented here, it is **not** a compatibility promise.
 The docs in this repository intentionally avoid promising provider behavior that is not actually implemented yet.
 
 At the moment:
+
 - Tavily-backed search and extract are implemented
 - Brave-backed web search is implemented
 - Exa-backed web search is implemented
@@ -40,6 +44,7 @@ At the moment:
 Unified source-discovery entrypoint.
 
 ### Request shape
+
 ```json
 {
   "query": "latest MCP authorization docs",
@@ -68,6 +73,7 @@ Unified source-discovery entrypoint.
 ```
 
 ### Request fields
+
 - `query`: search text
 - `intent`: `docs | fresh | general | social`
 - `freshness`: `day | week | month | year | any`
@@ -83,12 +89,14 @@ Unified source-discovery entrypoint.
 - `provider`: optional override, primarily for testing / debugging / controlled rollout
 
 ### Intent semantics
+
 - `docs`: authoritative / official / canonical retrieval
 - `fresh`: recent updates / recent news / recent changes
 - `general`: broad web discovery
 - `social`: discourse-heavy / social-aware lookup later
 
 ### Current implementation note
+
 - Tavily-backed search is implemented
 - Brave-backed web search is implemented
 - Exa-backed web search is implemented
@@ -110,6 +118,7 @@ Unified source-discovery entrypoint.
 - `provider` override exists mainly to force an available path during the transition period
 
 ### Example
+
 ```bash
 curl -X POST http://127.0.0.1:8000/api/web_search \
   -H 'Content-Type: application/json' \
@@ -129,6 +138,7 @@ curl -X POST http://127.0.0.1:8000/api/web_search \
 Unified known-URL extraction entrypoint.
 
 ### Request shape
+
 ```json
 {
   "urls": ["https://modelcontextprotocol.io/docs/learn/architecture"],
@@ -143,6 +153,7 @@ Unified known-URL extraction entrypoint.
 ```
 
 ### Request fields
+
 - `urls`: one or more absolute HTTP(S) URLs
 - `mode`: `content | structured`
 - `schema`: optional structured extraction schema
@@ -153,11 +164,13 @@ Unified known-URL extraction entrypoint.
 - `provider`: optional override
 
 ### Current implementation note
+
 - Tavily-backed extract is implemented for `mode="content"`
 - Exa-backed extract is implemented for `mode="content"`
 - Firecrawl-backed extract is implemented for `mode="content"` with `provider="firecrawl"`
 - content extract requests with `query` or `max_chunks` now prefer Exa when configured, then fall back to Tavily
 - plain `mode="content"` still prefers Tavily, with Exa available as fallback when configured
+- single-URL `mode="content"` requests now use a local SQLite URL content cache with stale-while-revalidate behavior when `debug=false`
 - Exa extract currently maps `query` to provider-side highlights and uses those highlights as `chunks`
 - Firecrawl content extract currently uses `/scrape` markdown output and derives chunks locally
 - `mode="structured"` is part of the contract, but no provider implements it right now
@@ -165,10 +178,12 @@ Unified known-URL extraction entrypoint.
 - providers that do not implement `mode="structured"` return `provider_not_implemented`
 
 ### Response notes
+
 - content mode returns extracted page objects under `pages`
 - `structured_data` is reserved for future structured extraction support
 
 ### Example
+
 ```bash
 curl -X POST http://127.0.0.1:8000/api/web_extract \
   -H 'Content-Type: application/json' \
@@ -192,21 +207,22 @@ curl -X POST http://127.0.0.1:8000/api/web_extract \
 
 ## Stability promise table
 
-| Surface | Current status |
-|---|---|
-| `web_search` request/response contract | stable target surface |
-| `web_extract` request/response contract | stable target surface |
-| MCP `web_search` / `web_extract` names | stable target surface |
-| `provider` override | debug / rollout aid, not long-term primary contract |
-| multi-provider verification behavior | planned, not stable yet |
-| monitoring workflows | future / non-public |
-| provider-specific routing behavior | implementation detail unless documented otherwise |
+| Surface                                 | Current status                                      |
+| --------------------------------------- | --------------------------------------------------- |
+| `web_search` request/response contract  | stable target surface                               |
+| `web_extract` request/response contract | stable target surface                               |
+| MCP `web_search` / `web_extract` names  | stable target surface                               |
+| `provider` override                     | debug / rollout aid, not long-term primary contract |
+| multi-provider verification behavior    | planned, not stable yet                             |
+| monitoring workflows                    | future / non-public                                 |
+| provider-specific routing behavior      | implementation detail unless documented otherwise   |
 
 ---
 
 ## Relationship to other docs
 
 Read next:
+
 - `docs/03-error-model.md`
 - `docs/02-capability-model.md`
 - `docs/06-development-workflow.md`

@@ -11,6 +11,7 @@ The goal is to make failures easier for both humans and AI agents to handle cons
 ## Stable error vocabulary
 
 The project should converge toward a small stable set of semantic error types:
+
 - `invalid_request`
 - `provider_not_supported`
 - `provider_not_implemented`
@@ -37,6 +38,7 @@ Some of these already exist in code. The full HTTP + MCP normalization layer is 
 ```
 
 ### Fields
+
 - `error.type`: stable semantic error name
 - `error.message`: human-readable explanation
 - `error.provider`: optional provider identifier when relevant
@@ -46,6 +48,7 @@ Some of these already exist in code. The full HTTP + MCP normalization layer is 
 ## Example errors
 
 ### Validation-style error
+
 ```json
 {
   "error": {
@@ -56,6 +59,7 @@ Some of these already exist in code. The full HTTP + MCP normalization layer is 
 ```
 
 ### Provider timeout
+
 ```json
 {
   "error": {
@@ -67,6 +71,7 @@ Some of these already exist in code. The full HTTP + MCP normalization layer is 
 ```
 
 ### Budget exceeded
+
 ```json
 {
   "error": {
@@ -77,7 +82,20 @@ Some of these already exist in code. The full HTTP + MCP normalization layer is 
 }
 ```
 
+### Provider not supported
+
+```json
+{
+  "error": {
+    "type": "provider_not_supported",
+    "message": "Unsupported search provider: firecrawl",
+    "provider": "firecrawl"
+  }
+}
+```
+
 ### Provider not implemented
+
 ```json
 {
   "error": {
@@ -89,6 +107,7 @@ Some of these already exist in code. The full HTTP + MCP normalization layer is 
 ```
 
 ### Future partial-results shape
+
 ```json
 {
   "error": {
@@ -106,6 +125,7 @@ Some of these already exist in code. The full HTTP + MCP normalization layer is 
 ## MCP mapping
 
 Current status:
+
 - MCP tool errors are already normalized by the tool layer
 - HTTP API errors are now normalized into the semantic error shape for validation, malformed JSON, and provider failures
 - future partial-success behavior should not be hidden as a full success or a full failure
@@ -115,6 +135,7 @@ Current status:
 ## Relationship to other docs
 
 Read next:
+
 - `docs/01-public-api.md`
 - `docs/04-operations.md`
 - `docs/06-development-workflow.md`

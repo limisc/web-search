@@ -5,7 +5,7 @@ import respx
 from httpx import ConnectError, Request, Response
 
 from web_search.config import clear_settings_cache
-from web_search.models.requests import ExtractRequest, SearchRequest
+from web_search.models.requests import SearchPreferences, SearchRequest
 from web_search.providers import clear_provider_cache
 from web_search.providers.newsapi import NewsApiProvider
 from web_search.services.search_service import clear_search_cache
@@ -86,7 +86,7 @@ async def test_newsapi_search_maps_supported_params(monkeypatch: pytest.MonkeyPa
             query="latest startup funding",
             intent="fresh",
             freshness="week",
-            preferences={"search_lang": "en-US"},
+            preferences=SearchPreferences(search_lang="en-US"),
             include_domains=["techcrunch.com", "theverge.com"],
             exclude_domains=["example.com"],
             max_results=3,
@@ -126,7 +126,7 @@ async def test_newsapi_search_uses_top_headlines_for_country_fresh_queries(monke
         SearchRequest(
             query="latest startup funding",
             intent="fresh",
-            preferences={"country": "us"},
+            preferences=SearchPreferences(country="us"),
             max_results=3,
         )
     )
@@ -134,19 +134,6 @@ async def test_newsapi_search_uses_top_headlines_for_country_fresh_queries(monke
     assert captured["path"] == "/v2/top-headlines"
     assert captured["country"] == "US"
     assert captured["q"] == "latest startup funding"
-    monkeypatch.setenv("NEWSAPI_API_KEY", "test-key")
-    monkeypatch.setenv("NEWSAPI_BASE_URL", "https://newsapi.org/v2")
-
-    respx.get("https://newsapi.org/v2/everything").mock(
-        return_value=Response(429, json={"status": "error", "code": "apiKeyExhausted", "message": "No more requests available"})
-    )
-
-    provider = NewsApiProvider()
-    with pytest.raises(ProviderError) as exc_info:
-        await provider.search(SearchRequest(query="latest startup funding", intent="fresh"))
-
-    assert exc_info.value.error_type == "budget_exceeded"
-    assert exc_info.value.provider == "newsapi"
 
 
 @pytest.mark.asyncio
@@ -161,15 +148,23 @@ async def test_newsapi_search_raises_not_configured_without_key(monkeypatch: pyt
 
 
 @pytest.mark.asyncio
-async def test_newsapi_extract_is_not_implemented(monkeypatch: pytest.MonkeyPatch) -> None:
+@respx.mock
+async def test_newsapi_search_maps_api_key_exhausted_to_budget_exceeded(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("NEWSAPI_API_KEY", "test-key")
     monkeypatch.setenv("NEWSAPI_BASE_URL", "https://newsapi.org/v2")
 
+    respx.get("https://newsapi.org/v2/everything").mock(
+        return_value=Response(
+            429,
+            json={"status": "error", "code": "apiKeyExhausted", "message": "No more requests available"},
+        )
+    )
+
     provider = NewsApiProvider()
     with pytest.raises(ProviderError) as exc_info:
-        await provider.extract(ExtractRequest(urls=["https://example.com/article"], provider="newsapi"))
+        await provider.search(SearchRequest(query="latest startup funding", intent="fresh"))
 
-    assert exc_info.value.error_type == "provider_not_implemented"
+    assert exc_info.value.error_type == "budget_exceeded"
     assert exc_info.value.provider == "newsapi"
 
 

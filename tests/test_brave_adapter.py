@@ -5,7 +5,7 @@ import respx
 from httpx import ConnectError, Request, Response
 
 from web_search.config import clear_settings_cache
-from web_search.models.requests import SearchRequest
+from web_search.models.requests import BraveSearchOptions, SearchPreferences, SearchProviderOptions, SearchRequest
 from web_search.providers import clear_provider_cache
 from web_search.providers.brave import BraveProvider
 from web_search.services.search_service import clear_search_cache
@@ -84,13 +84,13 @@ async def test_brave_search_maps_supported_params(monkeypatch: pytest.MonkeyPatc
     await provider.search(
         SearchRequest(
             query="python asyncio",
-            preferences={
-                "country": "us",
-                "search_lang": "en",
-                "ui_lang": "en-US",
-                "safesearch": "strict",
-                "spellcheck": False,
-            },
+            preferences=SearchPreferences(
+                country="us",
+                search_lang="en",
+                ui_lang="en-US",
+                safesearch="strict",
+                spellcheck=False,
+            ),
             freshness="week",
         )
     )
@@ -124,14 +124,14 @@ async def test_brave_search_passes_multiple_goggles_via_post(monkeypatch: pytest
         SearchRequest(
             query="python asyncio",
             provider="brave",
-            provider_options={
-                "brave": {
-                    "goggles": [
+            provider_options=SearchProviderOptions(
+                brave=BraveSearchOptions(
+                    goggles=[
                         "https://example.com/dev-docs.goggle",
                         "$boost=3,site=docs.python.org",
                     ]
-                }
-            },
+                )
+            ),
         )
     )
 

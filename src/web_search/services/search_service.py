@@ -4,7 +4,7 @@ import time
 
 from web_search.models.requests import SearchRequest
 from web_search.models.responses import SearchResponse
-from web_search.providers import get_provider, is_provider_available
+from web_search.providers import get_search_provider, is_search_provider_available
 from web_search.services.planner import Planner
 from web_search.services.router import Router
 from web_search.utils.cache import TTLCache, make_cache_key
@@ -33,10 +33,12 @@ class SearchService:
         chosen_provider_name: str | None = None
         last_error: ProviderError | None = None
         for provider_name in plan.search_providers:
-            if not is_provider_available(provider_name):
+            if not is_search_provider_available(provider_name):
+                if request.provider == provider_name:
+                    get_search_provider(provider_name)
                 continue
             chosen_provider_name = provider_name
-            provider = get_provider(provider_name)
+            provider = get_search_provider(provider_name)
             try:
                 response = await provider.search(request)
                 response.meta.cached = False

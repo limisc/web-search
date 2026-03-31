@@ -11,6 +11,7 @@ This document tells future humans and AI agents how to change the repository saf
 Any change that affects the public contract should update documentation in the same PR.
 
 At minimum, check whether you need to update:
+
 - `README.md`
 - `docs/01-public-api.md`
 - `docs/02-capability-model.md`
@@ -22,21 +23,27 @@ At minimum, check whether you need to update:
 ## PR discipline
 
 ### If a PR changes public request/response schema
+
 Update:
+
 - `README.md`
 - `docs/01-public-api.md`
 - tests
 - `docs/05-roadmap.md` if roadmap status or scope changed
 
 ### If a PR changes provider support or routing semantics
+
 Update:
+
 - `docs/02-capability-model.md`
 - `docs/05-roadmap.md`
 - `docs/03-error-model.md` if failure behavior changes
 - README current-status summary if user-visible behavior changes
 
 ### If a PR changes deployment/security/ops behavior
+
 Update:
+
 - `docs/04-operations.md`
 - `README.md` if quick-start or deployment expectations changed
 
@@ -47,6 +54,7 @@ Update:
 This repository is expected to be used while it is still being developed.
 
 When coding here and also relying on this project's own search or extract capability, use a stable-service workflow:
+
 - keep a separate stable checkout or git worktree for the callable service
 - do active edits in the current checkout
 - point routine search and extract usage at the stable service, not the actively edited checkout
@@ -54,16 +62,19 @@ When coding here and also relying on this project's own search or extract capabi
 - AI-driven edits often touch many files at once, so restart only after a logical batch is ready
 
 Recommended shape:
+
 - `dev`: current checkout where edits happen
 - `live`: separate worktree, usually `../web-search-live`, serving the stable local instance on `127.0.0.1:8000`
 - optional `preview`: temporary instance from `dev`, usually on `127.0.0.1:8001`, for validating a batch before promotion
 
 Create the stable worktree once:
+
 ```bash
 git worktree add --detach ../web-search-live HEAD
 ```
 
 Start the stable HTTP service from the live worktree:
+
 ```bash
 cd ../web-search-live
 cp .env.example .env
@@ -81,12 +92,14 @@ The default `.env.example` now pins `UVICORN_WS_PROTOCOL=wsproto` so local start
 That keeps service logs, pid files, and temp files under `../web-search-live/.runtime/` instead of `/tmp`.
 
 Check status or stop it with:
+
 ```bash
 ./scripts/local_service.sh status live
 ./scripts/local_service.sh stop live
 ```
 
 Use that stable instance for local dogfooding, for example:
+
 ```bash
 curl -X POST http://127.0.0.1:8000/api/web_search \
   -H 'Content-Type: application/json' \
@@ -99,12 +112,14 @@ curl -X POST http://127.0.0.1:8000/api/web_search \
 
 Keep making code changes in `dev`.
 After a logical batch is ready, validate there with:
+
 ```bash
 uv run pytest -q
 uv run ruff check .
 ```
 
 If runtime validation is needed before promotion, start a temporary preview instance from `dev`:
+
 ```bash
 ./scripts/local_service.sh start preview
 ```
@@ -118,6 +133,7 @@ Prefer HTTP over stdio for local dogfooding because one stable HTTP process can 
 ## Code quality rules
 
 When editing Python in this repository, keep these rules:
+
 - validate external inputs at the edge, then pass typed request models through the service layer
 - keep the root request contract capability-first; if a knob is only meaningful for one provider, put it in provider-specific options or keep it inside the adapter instead of exposing it at the top level
 - prefer direct cleanup over compatibility scaffolding when there are no real external callers to preserve; do not keep deprecated fields, transition shims, or duplicate paths just for hypothetical migrations
@@ -132,12 +148,14 @@ When editing Python in this repository, keep these rules:
 ## Validation steps
 
 Before considering a change complete, run:
+
 ```bash
 uv run pytest -q
 uv run ruff check .
 ```
 
 Also perform a documentation consistency review:
+
 - does README still match current public behavior?
 - does `docs/01-public-api.md` still match the real contract?
 - does `docs/05-roadmap.md` still reflect phase status honestly?
@@ -160,6 +178,7 @@ Also perform a documentation consistency review:
 The repository uses focused docs under `docs/` as the main source of truth.
 
 Use these as the primary references:
+
 - `docs/00-project-purpose.md`
 - `docs/01-public-api.md`
 - `docs/02-capability-model.md`
@@ -173,6 +192,7 @@ Use these as the primary references:
 ## Relationship to other docs
 
 Read next:
+
 - `README.md`
 - `docs/01-public-api.md`
 - `docs/05-roadmap.md`

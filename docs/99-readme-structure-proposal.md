@@ -5,6 +5,7 @@ Goal: make the repository easier for both future humans and AI agents to underst
 ## Current state
 
 Right now:
+
 - `README.md` is the root landing page
 - focused docs exist under `docs/`
 - the old single-file planning approach has already been retired
@@ -18,6 +19,7 @@ The main job now is not to design the split anymore. The main job is to keep fut
 Previously, project purpose, current state, capability model, public contract, roadmap, and workflow guidance were mixed into a very small number of large documents.
 
 That made convergence easier in the short term, but it created long-term maintenance risks:
+
 - purpose, current state, and workflow were mixed together
 - updates could easily drift between files
 - both humans and AI had to scan too much before finding the right section
@@ -29,6 +31,7 @@ That made convergence easier in the short term, but it created long-term mainten
 ## 1. `README.md`
 
 Purpose:
+
 - act as the landing page
 - explain what the repo is in a small number of paragraphs
 - show the current public surface
@@ -42,6 +45,7 @@ README should stay short and stable.
 ## 2. `docs/00-project-purpose.md`
 
 Purpose:
+
 - preserve the north star
 - explain why this project exists
 - explain why it is not just a provider aggregator
@@ -51,6 +55,7 @@ Purpose:
 ## 3. `docs/01-public-api.md`
 
 Purpose:
+
 - define the stable external contract
 - define the current public surface
 - document compatibility expectations
@@ -60,6 +65,7 @@ Purpose:
 ## 4. `docs/02-capability-model.md`
 
 Purpose:
+
 - define the semantic model independent of provider brands
 - document routing lanes and degraded behavior
 
@@ -68,6 +74,7 @@ Purpose:
 ## 5. `docs/03-error-model.md`
 
 Purpose:
+
 - standardize failure handling semantics
 - make client and agent behavior more predictable
 
@@ -76,6 +83,7 @@ Purpose:
 ## 6. `docs/04-operations.md`
 
 Purpose:
+
 - capture security, deployment, and observability expectations
 
 ---
@@ -83,6 +91,7 @@ Purpose:
 ## 7. `docs/05-roadmap.md`
 
 Purpose:
+
 - hold phase planning and current roadmap status in one place
 
 ---
@@ -90,6 +99,7 @@ Purpose:
 ## 8. `docs/06-development-workflow.md`
 
 Purpose:
+
 - tell future humans and AI agents how to change the repo safely
 
 ---
@@ -97,6 +107,7 @@ Purpose:
 ## 9. `docs/99-readme-structure-proposal.md`
 
 Purpose:
+
 - record why the split happened
 - preserve the documentation design rationale
 - prevent the repository from drifting back to oversized overlapping root docs
@@ -106,12 +117,14 @@ Purpose:
 ## Best reading order for humans / AI
 
 ### For quick understanding
+
 1. `README.md`
 2. `docs/00-project-purpose.md`
 3. `docs/01-public-api.md`
 4. `docs/02-capability-model.md`
 
 ### For making changes
+
 1. `README.md`
 2. `docs/06-development-workflow.md`
 3. `docs/01-public-api.md`
@@ -119,6 +132,7 @@ Purpose:
 5. relevant code
 
 ### For debugging behavior
+
 1. `docs/01-public-api.md`
 2. `docs/03-error-model.md`
 3. `docs/04-operations.md`
@@ -129,6 +143,7 @@ Purpose:
 ## Concrete recommendation going forward
 
 ### Keep in `README.md`
+
 - project purpose summary
 - current public surface summary
 - current implementation summary
@@ -136,6 +151,7 @@ Purpose:
 - links to docs
 
 ### Keep in `docs/`
+
 - detailed capability model
 - provider support / degraded behavior
 - error semantics
@@ -144,6 +160,7 @@ Purpose:
 - operations / security / observability
 
 ### Avoid reintroducing
+
 - large root planning documents
 - duplicated detailed specs in both README and deeper docs
 - roadmap detail mixed into the landing page

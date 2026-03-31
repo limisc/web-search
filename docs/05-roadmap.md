@@ -2,11 +2,11 @@
 
 ## Phase status overview
 
-| Phase | Status | Core goal | Notes |
-|---|---|---|---|
-| V1 | in progress | unified interfaces + thin MCP + HTTP APIs + orchestrator skeleton | code already moved here, with Tavily plus Brave plus Exa plus NewsAPI execution in place |
-| V1.5 | planned | verification + future monitoring building blocks | depends on basic multi-provider capabilities landing first |
-| V2 | planned | intelligent routing, ranking, cost-awareness, health-awareness | after V1.5 stabilizes |
+| Phase | Status      | Core goal                                                         | Notes                                                                                    |
+| ----- | ----------- | ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| V1    | in progress | unified interfaces + thin MCP + HTTP APIs + orchestrator skeleton | code already moved here, with Tavily plus Brave plus Exa plus NewsAPI execution in place |
+| V1.5  | planned     | verification + future monitoring building blocks                  | depends on basic multi-provider capabilities landing first                               |
+| V2    | planned     | intelligent routing, ranking, cost-awareness, health-awareness    | after V1.5 stabilizes                                                                    |
 
 ---
 
@@ -15,6 +15,7 @@
 This roadmap describes the direction of the repository, not a claim that every named mechanism already exists.
 
 Important reality checks:
+
 - Tavily-backed search and extract are implemented
 - Brave-backed web search is implemented
 - Exa-backed web search is implemented
@@ -33,6 +34,7 @@ Important reality checks:
 Goal: stabilize the public contract, HTTP API, MCP thin facade, and router/planner/cache skeleton first.
 
 ### Scope
+
 - public interfaces
   - unified `web_search` schema
   - unified `web_extract` schema
@@ -45,7 +47,7 @@ Goal: stabilize the public contract, HTTP API, MCP thin facade, and router/plann
   - unified response models
 - cache
   - query cache
-  - reserve URL content cache for later
+  - URL content cache with SQLite persistence and stale-while-revalidate semantics for single-URL content extract
 - APIs
   - `POST /api/web_search`
   - `POST /api/web_extract`
@@ -55,6 +57,7 @@ Goal: stabilize the public contract, HTTP API, MCP thin facade, and router/plann
   - capped `max_results`
 
 ### Default budget rules
+
 - `max_results` default: `5`
 - public `max_results` hard cap: `10`
 - `low_cost`: single provider by default
@@ -65,6 +68,7 @@ Goal: stabilize the public contract, HTTP API, MCP thin facade, and router/plann
 - `debug=false` by default
 
 ### V1 checklist
+
 - [x] unified `web_search` schema
 - [x] unified `web_extract` schema
 - [x] MCP tools aligned with HTTP contract
@@ -79,10 +83,12 @@ Goal: stabilize the public contract, HTTP API, MCP thin facade, and router/plann
 - [ ] structured extract execution
 - [ ] provider capability matrix finalized
 - [x] HTTP API integration tests
-- [ ] URL content cache
+- [x] URL content cache
 
 ### V1 Definition of Done
+
 V1 should only be declared complete when all of the following are true:
+
 - HTTP + MCP contract tests pass
 - the Tavily primary path is stable, including timeout / failure degradation behavior
 - docs and implementation have been checked for consistency
@@ -95,6 +101,7 @@ V1 should only be declared complete when all of the following are true:
 Goal: improve reliability and prepare the foundations for future scheduled watch / diff / alerts.
 
 ### Scope
+
 - verification levels
   - `none`: single provider
   - `light`: future limited secondary verification behavior later
@@ -114,6 +121,7 @@ Goal: improve reliability and prepare the foundations for future scheduled watch
   - webhook / log output first
 
 ### V1.5 checklist
+
 - [ ] verification levels become real behavior, not just contract placeholders
 - [ ] verifier module
 - [ ] duplicate collapse / canonical URL handling
@@ -128,6 +136,7 @@ Goal: improve reliability and prepare the foundations for future scheduled watch
 Goal: evolve from a purely rule-based orchestrator into one with cost-awareness, health-awareness, and some learned behavior.
 
 ### Scope
+
 - lightweight LLM router
   - small model
   - constrained route-plan JSON output
@@ -145,6 +154,7 @@ Goal: evolve from a purely rule-based orchestrator into one with cost-awareness,
   - richer verification / synthesis
 
 ### V2 checklist
+
 - [ ] lightweight LLM router
 - [ ] learned ranking hooks
 - [ ] per-task budget support
@@ -158,6 +168,7 @@ Goal: evolve from a purely rule-based orchestrator into one with cost-awareness,
 ## Relationship to other docs
 
 Read next:
+
 - `docs/02-capability-model.md`
 - `docs/01-public-api.md`
 - `docs/06-development-workflow.md`
