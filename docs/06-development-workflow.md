@@ -124,6 +124,7 @@ After a logical batch is ready, validate there with:
 ```bash
 uv run pytest -q
 uv run ruff check .
+uv run pyright
 ```
 
 If the batch changes versioned release state, also:
@@ -171,6 +172,7 @@ Before considering a change complete, run:
 ```bash
 uv run pytest -q
 uv run ruff check .
+uv run pyright
 ```
 
 Also perform a documentation consistency review:

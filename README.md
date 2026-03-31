@@ -124,6 +124,11 @@ uv run pytest -q
 uv run ruff check .
 ```
 
+### 8. Run type check
+```bash
+uv run pyright
+```
+
 ---
 
 ## Local development and dogfooding
