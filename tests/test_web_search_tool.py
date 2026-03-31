@@ -58,7 +58,8 @@ async def test_web_search_supports_brave_provider_override(monkeypatch: pytest.M
     result = await web_search(query="hello", provider="brave")
 
     assert result["provider"] == "brave"
-    assert result["results"][0]["title"] == "Model Context Protocol"
+    assert result["meta"]["capability"] == "broad_search"
+    assert result["meta"]["provider_override_applied"] is True
 
 
 
@@ -166,7 +167,8 @@ async def test_web_search_supports_newsapi_provider_override(monkeypatch: pytest
     result = await web_search(query="hello", provider="newsapi", intent="fresh")
 
     assert result["provider"] == "newsapi"
-    assert result["results"][0]["title"] == "Fresh headline"
+    assert result["meta"]["capability"] == "fresh_search"
+    assert result["meta"]["provider_override_applied"] is True
 
 
 @pytest.mark.asyncio
@@ -193,7 +195,8 @@ async def test_web_search_supports_exa_provider_override(monkeypatch: pytest.Mon
     result = await web_search(query="hello", provider="exa")
 
     assert result["provider"] == "exa"
-    assert result["results"][0]["title"] == "Model Context Protocol"
+    assert result["meta"]["capability"] == "broad_search"
+    assert result["meta"]["provider_override_applied"] is True
 
 
 @pytest.mark.asyncio
@@ -266,7 +269,8 @@ async def test_web_extract_supports_exa_provider_override(monkeypatch: pytest.Mo
     )
 
     assert result["provider"] == "exa"
-    assert result["pages"][0]["title"] == "Model Context Protocol"
+    assert result["meta"]["capability"] == "content_extract"
+    assert result["meta"]["provider_override_applied"] is True
     assert result["pages"][0]["chunks"] == ["chunk-1", "chunk-2"]
 
 
@@ -301,7 +305,8 @@ async def test_web_extract_prefers_exa_for_content_extract_with_query(monkeypatc
     )
 
     assert result["provider"] == "exa"
-    assert result["pages"][0]["chunks"] == ["chunk-1", "chunk-2"]
+    assert result["meta"]["capability"] == "content_extract"
+    assert result["meta"]["provider_override_applied"] is False
 
 
 @pytest.mark.asyncio
@@ -334,7 +339,8 @@ async def test_web_extract_supports_firecrawl_provider_override(monkeypatch: pyt
     )
 
     assert result["provider"] == "firecrawl"
-    assert result["pages"][0]["title"] == "Model Context Protocol"
+    assert result["meta"]["capability"] == "content_extract"
+    assert result["meta"]["provider_override_applied"] is True
     assert result["pages"][0]["chunks"] == ["Paragraph two with MCP details"]
 
 

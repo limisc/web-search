@@ -4,8 +4,11 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field, HttpUrl
 
+from web_search.models.routing import ExtractCapability, SearchCapability
+
 VerificationLevel = Literal["none", "light", "medium", "high"]
 CacheState = Literal["miss", "fresh", "stale"]
+Capability = SearchCapability | ExtractCapability
 
 
 class Citation(BaseModel):
@@ -31,6 +34,8 @@ class ResponseMeta(BaseModel):
     cached: bool = False
     cache_state: CacheState | None = None
     route: str | None = None
+    capability: Capability | None = None
+    provider_override_applied: bool = False
     providers_used: list[str] = Field(default_factory=list)
     verification_level: VerificationLevel = "none"
 

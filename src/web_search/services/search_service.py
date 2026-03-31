@@ -43,6 +43,8 @@ class SearchService:
                 response = await provider.search(request)
                 response.meta.cached = False
                 response.meta.route = f"{decision.route}:{mode}"
+                response.meta.capability = decision.capability
+                response.meta.provider_override_applied = decision.provider_override_applied
                 response.meta.providers_used = [provider_name]
                 response.meta.verification_level = request.verification_level
                 response.meta.latency_ms = int((time.perf_counter() - started) * 1000)

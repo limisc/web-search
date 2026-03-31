@@ -40,6 +40,7 @@ Implemented today:
 - thin MCP facade
 - HTTP APIs
 - router / planner skeleton
+- successful responses expose `meta.route`, `meta.capability`, and `meta.provider_override_applied`
 - query cache
 - URL content cache with stale-while-revalidate semantics for single-URL content extract
 - extract responses expose `meta.cache_state` as `miss | fresh | stale` when the local URL content cache is used

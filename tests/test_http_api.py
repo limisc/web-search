@@ -248,6 +248,8 @@ async def test_web_search_routes_fresh_intent_to_newsapi_when_configured(app, mo
     assert response.status_code == 200
     assert body["provider"] == "newsapi"
     assert body["meta"]["route"] == "fallback_candidate:low_cost"
+    assert body["meta"]["capability"] == "fresh_search"
+    assert body["meta"]["provider_override_applied"] is False
     assert body["results"][0]["title"] == "Fresh headline"
     assert body["results"][0]["source_type"] == "news"
 
@@ -286,6 +288,8 @@ async def test_web_search_returns_normalized_success(app, monkeypatch: pytest.Mo
     assert body["provider"] == "tavily"
     assert body["query"] == "What is MCP?"
     assert body["meta"]["route"] == "single:low_cost"
+    assert body["meta"]["capability"] == "broad_search"
+    assert body["meta"]["provider_override_applied"] is False
     assert body["results"][0]["title"] == "MCP Intro"
 
 
@@ -327,6 +331,8 @@ async def test_web_search_returns_brave_success_when_overridden(app, monkeypatch
     assert response.status_code == 200
     assert body["provider"] == "brave"
     assert body["meta"]["route"] == "provider_override:low_cost"
+    assert body["meta"]["capability"] == "broad_search"
+    assert body["meta"]["provider_override_applied"] is True
     assert body["results"][0]["title"] == "Brave Result"
 
 
@@ -385,6 +391,8 @@ async def test_web_search_returns_exa_success_when_overridden(app, monkeypatch: 
     assert response.status_code == 200
     assert body["provider"] == "exa"
     assert body["meta"]["route"] == "provider_override:low_cost"
+    assert body["meta"]["capability"] == "broad_search"
+    assert body["meta"]["provider_override_applied"] is True
     assert body["results"][0]["title"] == "Exa Result"
 
 
@@ -423,6 +431,8 @@ async def test_web_search_routes_docs_to_exa_when_configured(app, monkeypatch: p
     assert response.status_code == 200
     assert body["provider"] == "exa"
     assert body["meta"]["route"] == "fallback_candidate:low_cost"
+    assert body["meta"]["capability"] == "authoritative_search"
+    assert body["meta"]["provider_override_applied"] is False
     assert body["results"][0]["title"] == "Official MCP docs"
 
 
@@ -464,6 +474,8 @@ async def test_web_extract_returns_exa_success_when_overridden(app, monkeypatch:
     assert response.status_code == 200
     assert body["provider"] == "exa"
     assert body["meta"]["route"] == "provider_override"
+    assert body["meta"]["capability"] == "content_extract"
+    assert body["meta"]["provider_override_applied"] is True
     assert body["meta"]["cache_state"] == "miss"
     assert body["pages"][0]["title"] == "Exa Page"
     assert body["pages"][0]["chunks"] == ["chunk-1", "chunk-2"]
@@ -508,6 +520,8 @@ async def test_web_extract_routes_content_extract_to_exa_when_configured(app, mo
     assert response.status_code == 200
     assert body["provider"] == "exa"
     assert body["meta"]["route"] == "fallback_candidate"
+    assert body["meta"]["capability"] == "content_extract"
+    assert body["meta"]["provider_override_applied"] is False
     assert body["pages"][0]["title"] == "Official MCP docs"
 
 
@@ -574,6 +588,8 @@ async def test_web_extract_returns_firecrawl_success_when_overridden(app, monkey
     assert response.status_code == 200
     assert body["provider"] == "firecrawl"
     assert body["meta"]["route"] == "provider_override"
+    assert body["meta"]["capability"] == "content_extract"
+    assert body["meta"]["provider_override_applied"] is True
     assert body["meta"]["cache_state"] == "miss"
     assert body["pages"][0]["title"] == "Model Context Protocol"
     assert body["pages"][0]["chunks"] == ["Paragraph two with MCP details"]

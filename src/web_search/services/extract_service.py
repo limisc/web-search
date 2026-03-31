@@ -48,6 +48,8 @@ class ExtractService:
             try:
                 response = await provider.extract(request)
                 response.meta.route = decision.route
+                response.meta.capability = decision.capability
+                response.meta.provider_override_applied = decision.provider_override_applied
                 response.meta.providers_used = [provider_name]
                 return response
             except ProviderError as exc:
@@ -116,6 +118,8 @@ class ExtractService:
                         cached=lookup.state in {"fresh", "stale"},
                         cache_state=lookup.state,
                         route=decision.route,
+                        capability=decision.capability,
+                        provider_override_applied=decision.provider_override_applied,
                         providers_used=[provider_name],
                     ),
                 )

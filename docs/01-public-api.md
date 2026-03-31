@@ -182,7 +182,10 @@ Unified known-URL extraction entrypoint.
 
 ### Response notes
 
+- successful search responses currently expose `meta.route`, `meta.capability`, `meta.provider_override_applied`, `meta.providers_used`, and `meta.verification_level`
+- `meta.route` keeps the current route shape such as `single:low_cost` or `fallback_candidate:low_cost`
 - content mode returns extracted page objects under `pages`
+- extract responses currently expose `meta.route`, `meta.capability`, `meta.provider_override_applied`, `meta.providers_used`, and `meta.cache_state`
 - `structured_data` is reserved for future structured extraction support
 
 ### Example
