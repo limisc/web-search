@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Literal
+from typing import Any, Literal
 
 RouteKind = Literal["single", "fallback_candidate", "provider_override"]
 SearchCapability = Literal[
@@ -19,6 +19,13 @@ class RouteDecision:
     providers: tuple[str, ...]
     provider_override_applied: bool = False
     reason: str | None = None
+
+    def details(self) -> dict[str, Any]:
+        return {
+            "route": self.route,
+            "provider_override_applied": self.provider_override_applied,
+            "providers": list(self.providers),
+        }
 
     @property
     def primary_provider(self) -> str | None:
@@ -41,7 +48,13 @@ class RouteDecision:
 class SearchRouteDecision(RouteDecision):
     capability: SearchCapability = "broad_search"
 
+    def details(self) -> dict[str, Any]:
+        return {**super().details(), "capability": self.capability}
+
 
 @dataclass(frozen=True)
 class ExtractRouteDecision(RouteDecision):
     capability: ExtractCapability = "content_extract"
+
+    def details(self) -> dict[str, Any]:
+        return {**super().details(), "capability": self.capability}

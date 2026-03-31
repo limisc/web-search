@@ -29,13 +29,7 @@ class SearchService:
         started = time.perf_counter()
         decision = self.router.plan(request)
         mode = self.planner.mode_for(request)
-        decision_details = {
-            "route": decision.route,
-            "capability": decision.capability,
-            "provider_override_applied": decision.provider_override_applied,
-            "providers": list(decision.providers),
-            "mode": mode,
-        }
+        decision_details = {**decision.details(), "mode": mode}
 
         chosen_provider_name: str | None = None
         last_error: ProviderError | None = None

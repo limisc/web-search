@@ -24,12 +24,7 @@ class ExtractService:
 
     async def run(self, request: ExtractRequest) -> ExtractResponse:
         decision = self.router.plan(request)
-        decision_details = {
-            "route": decision.route,
-            "capability": decision.capability,
-            "provider_override_applied": decision.provider_override_applied,
-            "providers": list(decision.providers),
-        }
+        decision_details = decision.details()
 
         if request.mode == "structured" and not decision.providers:
             raise ProviderError(
@@ -80,12 +75,7 @@ class ExtractService:
     ) -> ExtractResponse | None:
         last_error: ProviderError | None = None
         url = str(request.urls[0])
-        decision_details = {
-            "route": decision.route,
-            "capability": decision.capability,
-            "provider_override_applied": decision.provider_override_applied,
-            "providers": list(decision.providers),
-        }
+        decision_details = decision.details()
 
         for provider_name in decision.providers:
             if not is_extract_provider_available(provider_name):

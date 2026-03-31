@@ -33,6 +33,12 @@ def test_search_router_returns_typed_docs_route_decision(monkeypatch: pytest.Mon
     assert decision.fallback_providers == ("brave", "tavily")
     assert decision.provider_override_applied is False
     assert decision.allows_fallback is True
+    assert decision.details() == {
+        "route": "fallback_candidate",
+        "capability": "authoritative_search",
+        "provider_override_applied": False,
+        "providers": ["exa", "brave", "tavily"],
+    }
 
 
 def test_search_router_marks_explicit_provider_override(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -67,6 +73,12 @@ def test_extract_router_prefers_exa_for_content_queries(monkeypatch: pytest.Monk
     assert decision.primary_provider == "exa"
     assert decision.fallback_providers == ("tavily",)
     assert decision.allows_fallback is True
+    assert decision.details() == {
+        "route": "fallback_candidate",
+        "capability": "content_extract",
+        "provider_override_applied": False,
+        "providers": ["exa", "tavily"],
+    }
 
 
 def test_extract_router_returns_structured_route_without_default_provider(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -86,3 +98,9 @@ def test_extract_router_returns_structured_route_without_default_provider(monkey
     assert decision.primary_provider is None
     assert decision.fallback_providers == ()
     assert decision.allows_fallback is False
+    assert decision.details() == {
+        "route": "single",
+        "capability": "structured_extract",
+        "provider_override_applied": False,
+        "providers": [],
+    }
