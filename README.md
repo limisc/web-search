@@ -169,6 +169,18 @@ The full workflow lives in:
 These are not in the project yet.
 They are being tracked because they may strengthen search, structured extraction, browser automation, or adjacent extraction lanes.
 
+## Architecture watchlist
+
+These are repositories, not providers.
+They are worth keeping on a short list because they expose design patterns relevant to this project.
+
+| Repo | Watch for | Why it is interesting |
+| --- | --- | --- |
+| `skernelx/MySearch-Proxy` | capability-first search surface, route-decision layer, explicit fallback chains, live provider health, proxy-first deployment shape | closest outside reference for a multi-provider search orchestrator |
+| `searxng/searxng` | mature self-hosted metasearch backend, large engine plugin system, settings schema, limiter and bot-detection patterns, admin and ops depth | strongest self-hosted `broad_search` backend reference, but much heavier than this repo and AGPL-licensed |
+| `netlops/SoSearch` | shared core execution across HTTP and MCP, thin provider adapters, very small public surface, scraper-first broad-search lane | useful reference for transport reuse and a possible lightweight self-hosted `broad_search` fallback, not a template for docs or structured extract lanes |
+| `catlog22/codexlens-search` | MCP packaging quality, staged search pipeline patterns, strong test posture | useful for tooling and test ideas even though the domain is code search |
+
 ### High-priority watchlist
 
 | Provider | Primary lane | Free tier signal | Why watch it |

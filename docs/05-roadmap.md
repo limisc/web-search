@@ -150,6 +150,13 @@ Goal: evolve from a purely rule-based orchestrator into one with cost-awareness,
   - Firecrawl for extraction-heavy paths
   - Grok for freshness / social paths
   - richer verification / synthesis
+- integration ideas worth borrowing from adjacent search repos
+  - keep the top-level contract capability-first, while allowing explicit provider override only as a secondary control
+  - add a typed route-decision layer between request parsing and provider execution so routing, caching, and fallback share the same decision object
+  - keep fallback chains explicit for extraction and other multi-step lanes instead of scattering implicit provider switching across adapters
+  - distinguish configured credentials from live provider health so routing can skip dead lanes without pretending they are available
+  - continue favoring one core execution path reused across HTTP and MCP surfaces rather than growing separate implementations
+  - avoid bundling unrelated control-plane surfaces into the core runtime unless a real shared deployment need appears
 
 ### V2 checklist
 
@@ -160,6 +167,9 @@ Goal: evolve from a purely rule-based orchestrator into one with cost-awareness,
 - [ ] health-aware routing
 - [ ] Grok freshness/social lane
 - [ ] richer verification / synthesis
+- [ ] typed route-decision model shared by routing, cache policy, and fallback logic
+- [ ] explicit provider live-health model separate from static config presence
+- [ ] documented fallback chains for content extract and future structured extract
 
 ---
 
@@ -170,29 +180,53 @@ They are being tracked because they may strengthen search, structured extraction
 
 ### High-priority watchlist
 
-| Provider | Primary lane | Free tier signal | Why watch it |
-| --- | --- | --- | --- |
-| Diffbot | structured extract | free forever with 10,000 extract calls / credits per month on the free plan, based on pricing and rate-limit docs | strongest external structured extraction candidate with meaningful monthly reset capacity |
-| SerpApi | Google / SERP search | official pricing and account docs indicate a small recurring monthly free allowance, with current external evidence pointing to roughly 100 to 250 free searches per month | strongest external Google SERP candidate and a likely search-lane supplement |
-| Olostep | AI-first scrape / extract / search | public pages indicate a recurring free monthly scrape allowance, but current public wording is inconsistent between 500 and 3,000 successful scrapes | promising AI-oriented web data platform with low paid entry and multiple relevant lanes |
-| BrowserCat | browser automation | free plan exists, but the current public pages we checked do not state the monthly free credit number clearly enough yet | best browser-lane candidate for JS-heavy pages, login flows, and future interaction support |
-| Apify | actor marketplace / niche extraction | free plan includes recurring monthly platform credits, commonly referenced as $5 per month | useful ecosystem option for niche or vertical extractors without committing to one core provider |
+| Provider   | Primary lane                         | Free tier signal                                                                                                                                                           | Why watch it                                                                                     |
+| ---------- | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Diffbot    | structured extract                   | free forever with 10,000 extract calls / credits per month on the free plan, based on pricing and rate-limit docs                                                          | strongest external structured extraction candidate with meaningful monthly reset capacity        |
+| SerpApi    | Google / SERP search                 | official pricing and account docs indicate a small recurring monthly free allowance, with current external evidence pointing to roughly 100 to 250 free searches per month | strongest external Google SERP candidate and a likely search-lane supplement                     |
+| Olostep    | AI-first scrape / extract / search   | public pages indicate a recurring free monthly scrape allowance, but current public wording is inconsistent between 500 and 3,000 successful scrapes                       | promising AI-oriented web data platform with low paid entry and multiple relevant lanes          |
+| BrowserCat | browser automation                   | free plan exists, but the current public pages we checked do not state the monthly free credit number clearly enough yet                                                   | best browser-lane candidate for JS-heavy pages, login flows, and future interaction support      |
+| Apify      | actor marketplace / niche extraction | free plan includes recurring monthly platform credits, commonly referenced as $5 per month                                                                                 | useful ecosystem option for niche or vertical extractors without committing to one core provider |
 
 ### Secondary watchlist
 
-| Provider | Primary lane | Free tier signal | Why watch it |
-| --- | --- | --- | --- |
-| Jina Reader | content transform / reader lane | basic usage is free and public materials reference free token buckets for new keys, but the exact long-term free allowance wording is inconsistent across pages | worth watching as a content-to-markdown / JSON transform layer rather than a traditional scraper |
-| Serper | Google / SERP search | 2,500 free queries are publicly advertised, but the current public evidence does not cleanly prove a recurring monthly reset | cheap Google SERP option, but the long-term free-tier shape is less clear than SerpApi |
-| SearchApi.io | Google / SERP search | 100 free requests are publicly advertised, but the monthly reset story is weak | useful feature coverage, but the free tier is small and less compelling |
-| Parseur | document extraction | 20 pages per month free forever | mostly relevant if the project expands beyond websites into documents or email parsing |
-| Monkt | HTML-to-JSON transform | free plan signals exist, but public pricing details are still too weak to rely on | keep on the radar, but do not prioritize without clearer official pricing and capability docs |
+| Provider     | Primary lane                    | Free tier signal                                                                                                                                                | Why watch it                                                                                     |
+| ------------ | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Jina Reader  | content transform / reader lane | basic usage is free and public materials reference free token buckets for new keys, but the exact long-term free allowance wording is inconsistent across pages | worth watching as a content-to-markdown / JSON transform layer rather than a traditional scraper |
+| Serper       | Google / SERP search            | 2,500 free queries are publicly advertised, but the current public evidence does not cleanly prove a recurring monthly reset                                    | cheap Google SERP option, but the long-term free-tier shape is less clear than SerpApi           |
+| SearchApi.io | Google / SERP search            | 100 free requests are publicly advertised, but the monthly reset story is weak                                                                                  | useful feature coverage, but the free tier is small and less compelling                          |
+| Parseur      | document extraction             | 20 pages per month free forever                                                                                                                                 | mostly relevant if the project expands beyond websites into documents or email parsing           |
+| Monkt        | HTML-to-JSON transform          | free plan signals exist, but public pricing details are still too weak to rely on                                                                               | keep on the radar, but do not prioritize without clearer official pricing and capability docs    |
 
 ### Watchlist rules
 
 - prefer recurring monthly reset free tiers over one-time trial credits when choosing what to monitor closely
 - do not treat this table as an integration commitment
 - before any implementation decision, re-check the provider's official pricing, rate limits, and API shape because these products change quickly
+
+### Repo and architecture watchlist
+
+These are not integration commitments.
+They are design references worth revisiting as this project grows.
+
+| Repo                        | What looks worth borrowing                                                                                                                          | Why it matters here                                                                                                                               | Current stance                                                                  |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `skernelx/MySearch-Proxy`   | capability-first request surface, typed route decision, explicit fallback chains, live-health aware routing, proxy-first deployment thinking        | closest match to this repo's orchestrator shape and multi-provider direction                                                                      | highest-value architecture watchlist item                                       |
+| `searxng/searxng`           | mature metasearch backend, huge engine catalog, settings schema, limiter and bot-detection patterns, admin and deployment depth                     | strongest self-hosted `broad_search` backend reference if the project ever needs a serious local metasearch lane                                  | watch for engine architecture, ops guardrails, and result normalization lessons |
+| `netlops/SoSearch`          | one core search execution path reused by both HTTP and MCP, thin adapter layer, simple normalized response shape, scraper-first multi-engine search | good reference for keeping surface area small while exposing multiple transports, and a candidate future self-hosted `broad_search` fallback lane | watch for simplicity, transport reuse, and low-cost self-hosted broad search    |
+| `catlog22/codexlens-search` | MCP ergonomics, strong test coverage habits, staged search pipeline thinking                                                                        | useful patterns around MCP packaging and test discipline, but not a direct model for web-search capabilities                                      | watch only for tooling and test ideas                                           |
+
+Notes:
+
+- `SearXNG` looks most relevant as a high-priority future self-hosted metasearch backend under `broad_search`.
+- Its strengths are breadth, plugin depth, settings discipline, and public-instance operations.
+- It is much heavier than this repo, and its AGPL license matters for any code-level reuse.
+- `SoSearch` looks more relevant as a lightweight self-hosted scraper-search lane under `broad_search`.
+- Neither repo is a model for `authoritative_search`, `structured_extract`, or the main capability-first orchestrator shape.
+- If explored later, treat both as bounded broad-search backends or fallback lanes, not as the default source of truth for docs-heavy tasks.
+
+Use this list to inform design reviews and roadmap choices.
+Do not treat it as proof that the repo should copy those systems wholesale.
 
 ## Future GitHub discovery and repo-reading lane
 

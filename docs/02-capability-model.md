@@ -142,7 +142,17 @@ Current extract behavior is more limited:
 - default `mode="structured"` returns `provider_not_implemented`
 - no provider currently implements `mode="structured"`
 
----
+## Design notes from adjacent repos
+
+A few patterns from nearby search projects are worth keeping in view as this capability model evolves.
+
+- Keep the public contract capability-first. Provider override can stay available, but it should remain secondary.
+- Add a typed route-decision object between validated requests and provider execution. That keeps routing, fallback, caching, and debug output aligned.
+- Make fallback chains explicit at the capability layer, especially for extract-style lanes.
+- Track live provider health separately from static key presence so the planner can skip dead routes cleanly.
+- Reuse the same core execution path across HTTP and MCP surfaces whenever possible.
+- Treat self-hosted metasearch systems such as `SearXNG` as possible future `broad_search` backends, especially when breadth and self-hosting matter.
+- Treat scraper-first systems such as `SoSearch` as possible lightweight `broad_search` fallback lanes, not as templates for `authoritative_search` or `structured_extract`.
 
 ## Result quality semantics
 
