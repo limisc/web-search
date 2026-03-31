@@ -18,6 +18,14 @@ At minimum, check whether you need to update:
 - `docs/03-error-model.md`
 - `docs/05-roadmap.md`
 
+Before every commit, do a self-audit:
+
+- inspect `git status`
+- review changed code for leftovers, stale branches, or transition scaffolding
+- review `README.md` and relevant `docs/*.md` for stale statements
+- confirm tests, lint, and type checks for the batch are clean
+- confirm whether `pyproject.toml`, `uv.lock`, and a new git tag also need to move together
+
 ---
 
 ## PR discipline
@@ -118,6 +126,15 @@ uv run pytest -q
 uv run ruff check .
 ```
 
+If the batch changes versioned release state, also:
+
+```bash
+uv sync --extra dev
+git tag <new-tag>
+git push origin HEAD
+git push origin <new-tag>
+```
+
 If runtime validation is needed before promotion, start a temporary preview instance from `dev`:
 
 ```bash
@@ -127,6 +144,8 @@ If runtime validation is needed before promotion, start a temporary preview inst
 That binds to `127.0.0.1:8001` by default and uses `./.runtime/preview.log`, `./.runtime/preview.pid`, and `./.runtime/tmp/`.
 
 Only after the batch looks good should it be promoted to `live`, followed by a manual restart of the live service.
+
+Before stopping, explicitly note the next highest-value step so the project state stays legible across sessions.
 
 Prefer HTTP over stdio for local dogfooding because one stable HTTP process can serve both the REST API and MCP-over-HTTP callers. Use stdio only when a caller explicitly requires it.
 
@@ -159,6 +178,7 @@ Also perform a documentation consistency review:
 - does README still match current public behavior?
 - does `docs/01-public-api.md` still match the real contract?
 - does `docs/05-roadmap.md` still reflect phase status honestly?
+- do `pyproject.toml`, `uv.lock`, git tags, and pushed GitHub tags still match if this batch changed release state?
 
 ---
 
