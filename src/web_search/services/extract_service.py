@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from web_search.models.requests import ExtractRequest
-from web_search.models.responses import ExtractResponse, ExtractedPage, ResponseMeta
+from web_search.models.responses import CacheState, ExtractResponse, ExtractedPage, ResponseMeta, apply_route_metadata
 from web_search.models.routing import ExtractRouteDecision
 from web_search.providers import get_extract_provider, is_extract_provider_available
 from web_search.services.extract_router import ExtractRouter
@@ -16,6 +16,27 @@ def _get_content_cache() -> ContentCache:
     if _CONTENT_CACHE is None:
         _CONTENT_CACHE = ContentCache()
     return _CONTENT_CACHE
+
+
+def _cached_response_meta(
+    *,
+    decision: ExtractRouteDecision,
+    provider_name: str,
+    cache_state: CacheState,
+) -> ResponseMeta:
+    meta = ResponseMeta(
+        latency_ms=0,
+        cached=cache_state in {"fresh", "stale"},
+        cache_state=cache_state,
+    )
+    apply_route_metadata(
+        meta,
+        route=decision.route,
+        capability=decision.capability,
+        provider_override_applied=decision.provider_override_applied,
+        provider_name=provider_name,
+    )
+    return meta
 
 
 class ExtractService:
@@ -48,10 +69,13 @@ class ExtractService:
             provider = get_extract_provider(provider_name)
             try:
                 response = await provider.extract(request)
-                response.meta.route = decision.route
-                response.meta.capability = decision.capability
-                response.meta.provider_override_applied = decision.provider_override_applied
-                response.meta.providers_used = [provider_name]
+                apply_route_metadata(
+                    response.meta,
+                    route=decision.route,
+                    capability=decision.capability,
+                    provider_override_applied=decision.provider_override_applied,
+                    provider_name=provider_name,
+                )
                 return response
             except ProviderError as exc:
                 last_error = exc.with_details(**decision_details, attempted_provider=provider_name)
@@ -115,14 +139,10 @@ class ExtractService:
                     provider=provider_name,
                     mode=request.mode,
                     pages=[page],
-                    meta=ResponseMeta(
-                        latency_ms=0,
-                        cached=lookup.state in {"fresh", "stale"},
+                    meta=_cached_response_meta(
+                        decision=decision,
+                        provider_name=provider_name,
                         cache_state=lookup.state,
-                        route=decision.route,
-                        capability=decision.capability,
-                        provider_override_applied=decision.provider_override_applied,
-                        providers_used=[provider_name],
                     ),
                 )
             except ProviderError as exc:

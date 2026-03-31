@@ -3,7 +3,7 @@ from __future__ import annotations
 import time
 
 from web_search.models.requests import SearchRequest
-from web_search.models.responses import SearchResponse
+from web_search.models.responses import SearchResponse, apply_route_metadata
 from web_search.providers import get_search_provider, is_search_provider_available
 from web_search.services.planner import Planner
 from web_search.services.router import Router
@@ -43,10 +43,13 @@ class SearchService:
             try:
                 response = await provider.search(request)
                 response.meta.cached = False
-                response.meta.route = f"{decision.route}:{mode}"
-                response.meta.capability = decision.capability
-                response.meta.provider_override_applied = decision.provider_override_applied
-                response.meta.providers_used = [provider_name]
+                apply_route_metadata(
+                    response.meta,
+                    route=f"{decision.route}:{mode}",
+                    capability=decision.capability,
+                    provider_override_applied=decision.provider_override_applied,
+                    provider_name=provider_name,
+                )
                 response.meta.verification_level = request.verification_level
                 response.meta.latency_ms = int((time.perf_counter() - started) * 1000)
                 _SEARCH_CACHE.set(cache_key, response.model_copy(deep=True))

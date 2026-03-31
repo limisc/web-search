@@ -40,6 +40,20 @@ class ResponseMeta(BaseModel):
     verification_level: VerificationLevel = "none"
 
 
+def apply_route_metadata(
+    meta: ResponseMeta,
+    *,
+    route: str,
+    capability: Capability,
+    provider_override_applied: bool,
+    provider_name: str,
+) -> None:
+    meta.route = route
+    meta.capability = capability
+    meta.provider_override_applied = provider_override_applied
+    meta.providers_used = [provider_name]
+
+
 class SearchResponse(BaseModel):
     query: str
     intent: str
