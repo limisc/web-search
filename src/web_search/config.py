@@ -28,6 +28,8 @@ class Settings(BaseSettings):
     mcp_path: str = Field(default="/mcp", alias="MCP_PATH")
     fastmcp_stateless_http: bool = Field(default=True, alias="FASTMCP_STATELESS_HTTP")
     uvicorn_ws_protocol: str = Field(default="wsproto", alias="UVICORN_WS_PROTOCOL")
+    content_cache_db_path: str = Field(default=".runtime/content_cache.sqlite", alias="CONTENT_CACHE_DB_PATH")
+    content_cache_max_entries: int = Field(default=10_000, ge=1, alias="CONTENT_CACHE_MAX_ENTRIES")
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 

@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Awaitable, Callable, Literal
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
+from web_search.config import get_settings
 from web_search.models.requests import ExtractRequest
 from web_search.models.responses import ExtractedPage
 
@@ -40,8 +41,15 @@ class CachedExtractLookup:
 
 
 class ContentCache:
-    def __init__(self, db_path: str | Path = ".runtime/content_cache.sqlite") -> None:
-        self.db_path = Path(db_path)
+    def __init__(
+        self,
+        db_path: str | Path | None = None,
+        *,
+        max_entries: int | None = None,
+    ) -> None:
+        settings = get_settings()
+        self.db_path = Path(db_path or settings.content_cache_db_path)
+        self.max_entries = max_entries or settings.content_cache_max_entries
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self._locks: dict[str, asyncio.Lock] = {}
         self._initialize_db()
@@ -185,7 +193,41 @@ class ContentCache:
                     now,
                 ),
             )
+            self._prune(conn, now=now)
             conn.commit()
+
+    def _prune(self, conn: sqlite3.Connection, *, now: float) -> None:
+        expired_keys = [
+            row[0]
+            for row in conn.execute(
+                "SELECT cache_key FROM content_cache WHERE stale_until < ? ORDER BY stale_until ASC",
+                (now,),
+            ).fetchall()
+        ]
+        if expired_keys:
+            conn.executemany(
+                "DELETE FROM content_cache WHERE cache_key = ?",
+                [(cache_key,) for cache_key in expired_keys],
+            )
+
+        row_count = conn.execute("SELECT COUNT(*) FROM content_cache").fetchone()
+        current_count = int(row_count[0]) if row_count is not None else 0
+        overflow = current_count - self.max_entries
+        if overflow <= 0:
+            return
+
+        lru_keys = [
+            row[0]
+            for row in conn.execute(
+                "SELECT cache_key FROM content_cache ORDER BY last_accessed_at ASC LIMIT ?",
+                (overflow,),
+            ).fetchall()
+        ]
+        if lru_keys:
+            conn.executemany(
+                "DELETE FROM content_cache WHERE cache_key = ?",
+                [(cache_key,) for cache_key in lru_keys],
+            )
 
 
 @dataclass(frozen=True)

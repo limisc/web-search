@@ -7,7 +7,14 @@ from web_search.services.extract_router import ExtractProviderPlan, ExtractRoute
 from web_search.utils.content_cache import ContentCache, cacheable_extract_request, derive_page_for_request
 from web_search.utils.errors import ProviderError
 
-_CONTENT_CACHE = ContentCache()
+_CONTENT_CACHE: ContentCache | None = None
+
+
+def _get_content_cache() -> ContentCache:
+    global _CONTENT_CACHE
+    if _CONTENT_CACHE is None:
+        _CONTENT_CACHE = ContentCache()
+    return _CONTENT_CACHE
 
 
 class ExtractService:
@@ -91,7 +98,7 @@ class ExtractService:
                 return provider_response.pages[0]
 
             try:
-                lookup = await _CONTENT_CACHE.get_or_create(
+                lookup = await _get_content_cache().get_or_create(
                     provider=provider_name,
                     url=url,
                     loader=load_page,
@@ -122,4 +129,7 @@ class ExtractService:
 
 
 def clear_extract_cache() -> None:
-    _CONTENT_CACHE.clear()
+    global _CONTENT_CACHE
+    if _CONTENT_CACHE is not None:
+        _CONTENT_CACHE.clear()
+    _CONTENT_CACHE = None

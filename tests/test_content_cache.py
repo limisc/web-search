@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import sqlite3
+from pathlib import Path
 
 import pytest
 
+from web_search.config import clear_settings_cache
 from web_search.models.requests import ExtractRequest
 from web_search.models.responses import ExtractResponse, ExtractedPage, ResponseMeta
 from web_search.services.extract_service import ExtractService, clear_extract_cache
@@ -12,6 +14,7 @@ from web_search.utils.content_cache import ContentCache, derive_page_for_request
 
 @pytest.fixture(autouse=True)
 def clear_content_cache() -> None:
+    clear_settings_cache()
     clear_extract_cache()
 
 
@@ -105,7 +108,84 @@ async def test_content_cache_returns_stale_and_refreshes_in_background(tmp_path)
 
 
 @pytest.mark.asyncio
-async def test_extract_service_uses_content_cache_for_single_url(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_content_cache_evicts_least_recently_used_rows_when_capacity_is_exceeded(tmp_path) -> None:
+    cache = ContentCache(db_path=tmp_path / "content-cache.sqlite", max_entries=1)
+
+    async def first_loader() -> ExtractedPage:
+        return ExtractedPage.model_validate(
+            {
+                "url": "https://example.com/one",
+                "title": "One",
+                "content": "one",
+                "excerpt": "one",
+                "chunks": [],
+                "provider": "exa",
+            }
+        )
+
+    async def second_loader() -> ExtractedPage:
+        return ExtractedPage.model_validate(
+            {
+                "url": "https://example.com/two",
+                "title": "Two",
+                "content": "two",
+                "excerpt": "two",
+                "chunks": [],
+                "provider": "exa",
+            }
+        )
+
+    await cache.get_or_create(provider="exa", url="https://example.com/one", loader=first_loader)
+    await cache.get_or_create(provider="exa", url="https://example.com/two", loader=second_loader)
+
+    with sqlite3.connect(cache.db_path) as conn:
+        rows = conn.execute("SELECT normalized_url FROM content_cache ORDER BY normalized_url").fetchall()
+
+    assert rows == [("https://example.com/two",)]
+
+
+@pytest.mark.asyncio
+async def test_content_cache_prunes_expired_rows_before_capacity_trim(tmp_path) -> None:
+    cache = ContentCache(db_path=tmp_path / "content-cache.sqlite", max_entries=2)
+
+    async def loader(url: str) -> ExtractedPage:
+        return ExtractedPage.model_validate(
+            {
+                "url": url,
+                "title": url,
+                "content": url,
+                "excerpt": url,
+                "chunks": [],
+                "provider": "exa",
+            }
+        )
+
+    await cache.get_or_create(provider="exa", url="https://example.com/expired", loader=lambda: loader("https://example.com/expired"))
+    with sqlite3.connect(cache.db_path) as conn:
+        conn.execute("UPDATE content_cache SET stale_until = ? WHERE normalized_url = ?", (0, "https://example.com/expired"))
+        conn.commit()
+
+    await cache.get_or_create(provider="exa", url="https://example.com/fresh-a", loader=lambda: loader("https://example.com/fresh-a"))
+    await cache.get_or_create(provider="exa", url="https://example.com/fresh-b", loader=lambda: loader("https://example.com/fresh-b"))
+
+    with sqlite3.connect(cache.db_path) as conn:
+        rows = conn.execute("SELECT normalized_url FROM content_cache ORDER BY normalized_url").fetchall()
+
+    assert rows == [
+        ("https://example.com/fresh-a",),
+        ("https://example.com/fresh-b",),
+    ]
+
+
+@pytest.mark.asyncio
+async def test_extract_service_uses_content_cache_for_single_url(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv("CONTENT_CACHE_DB_PATH", str(tmp_path / "service-cache.sqlite"))
+    monkeypatch.setenv("CONTENT_CACHE_MAX_ENTRIES", "10")
+    clear_extract_cache()
+
     service = ExtractService()
     call_count = 0
 
