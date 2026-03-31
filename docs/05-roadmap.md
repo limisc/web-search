@@ -168,7 +168,7 @@ Goal: evolve from a purely rule-based orchestrator into one with cost-awareness,
 - [ ] Grok freshness/social lane
 - [ ] richer verification / synthesis
 - [ ] typed route-decision model shared by routing, cache policy, and fallback logic
-- [ ] explicit provider live-health model separate from static config presence
+- [x] explicit provider live-health model separate from static config presence
 - [ ] documented fallback chains for content extract and future structured extract
 
 ---

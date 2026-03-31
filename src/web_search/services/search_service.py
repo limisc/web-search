@@ -6,6 +6,7 @@ from web_search.models.requests import SearchRequest
 from web_search.models.responses import SearchResponse, apply_route_metadata
 from web_search.providers import get_search_provider, is_search_provider_available
 from web_search.services.planner import Planner
+from web_search.services.provider_health import get_provider_health
 from web_search.services.router import Router
 from web_search.utils.cache import TTLCache, make_cache_key
 from web_search.utils.errors import ProviderError
@@ -29,7 +30,13 @@ class SearchService:
         started = time.perf_counter()
         decision = self.router.plan(request)
         mode = self.planner.mode_for(request)
-        decision_details = {**decision.details(), "mode": mode}
+        decision_details = {
+            **decision.details(),
+            "mode": mode,
+            "provider_health": {
+                provider_name: get_provider_health(provider_name).status for provider_name in decision.providers
+            },
+        }
 
         chosen_provider_name: str | None = None
         last_error: ProviderError | None = None

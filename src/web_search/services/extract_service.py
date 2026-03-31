@@ -5,6 +5,7 @@ from web_search.models.responses import CacheState, ExtractResponse, ExtractedPa
 from web_search.models.routing import ExtractRouteDecision
 from web_search.providers import get_extract_provider, is_extract_provider_available
 from web_search.services.extract_router import ExtractRouter
+from web_search.services.provider_health import get_provider_health
 from web_search.utils.content_cache import ContentCache, cacheable_extract_request, derive_page_for_request
 from web_search.utils.errors import ProviderError
 
@@ -45,7 +46,12 @@ class ExtractService:
 
     async def run(self, request: ExtractRequest) -> ExtractResponse:
         decision = self.router.plan(request)
-        decision_details = decision.details()
+        decision_details = {
+            **decision.details(),
+            "provider_health": {
+                provider_name: get_provider_health(provider_name).status for provider_name in decision.providers
+            },
+        }
 
         if request.mode == "structured" and not decision.providers:
             raise ProviderError(
@@ -99,7 +105,12 @@ class ExtractService:
     ) -> ExtractResponse | None:
         last_error: ProviderError | None = None
         url = str(request.urls[0])
-        decision_details = decision.details()
+        decision_details = {
+            **decision.details(),
+            "provider_health": {
+                provider_name: get_provider_health(provider_name).status for provider_name in decision.providers
+            },
+        }
 
         for provider_name in decision.providers:
             if not is_extract_provider_available(provider_name):

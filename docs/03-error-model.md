@@ -129,7 +129,7 @@ Current status:
 
 - MCP tool errors are already normalized by the tool layer
 - HTTP API errors are now normalized into the semantic error shape for validation, malformed JSON, and provider failures
-- provider failures can now include structured `error.details` context such as route, capability, provider override state, and attempted provider
+- provider failures can now include structured `error.details` context such as route, capability, provider override state, attempted provider, and current provider-health snapshot
 - future partial-success behavior should not be hidden as a full success or a full failure
 
 ---
