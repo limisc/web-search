@@ -46,4 +46,51 @@ def test_apply_light_verification_dedupes_results_and_citations() -> None:
         "canonicalized_urls": 1,
         "duplicates_removed": 1,
         "source_domains": ["example.com"],
+        "unique_domain_count": 1,
+        "multi_source": False,
+    }
+
+
+
+def test_apply_light_verification_reports_diversity_and_agreement_hints() -> None:
+    response = SearchResponse(
+        query="install guide",
+        intent="docs",
+        provider="tavily",
+        results=[
+            SearchHit.model_validate(
+                {
+                    "title": "Install Guide",
+                    "url": "https://docs.example.com/install",
+                    "provider": "tavily",
+                }
+            ),
+            SearchHit.model_validate(
+                {
+                    "title": "Install Guide",
+                    "url": "https://mirror.example.net/install?ref=partner",
+                    "provider": "tavily",
+                }
+            ),
+            SearchHit.model_validate(
+                {
+                    "title": "Release Notes",
+                    "url": "https://blog.example.org/release-notes",
+                    "provider": "tavily",
+                }
+            ),
+        ],
+        citations=[],
+        meta=ResponseMeta(latency_ms=10, verification_level="light"),
+    )
+
+    verified = apply_light_verification(response)
+
+    assert verified.meta.verification_summary == {
+        "canonicalized_urls": 1,
+        "duplicates_removed": 0,
+        "source_domains": ["docs.example.com", "mirror.example.net", "blog.example.org"],
+        "unique_domain_count": 3,
+        "multi_source": True,
+        "agreement_hints": ["Matching titles appeared across 2 domains"],
     }

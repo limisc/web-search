@@ -44,6 +44,7 @@ Current status:
 - single-URL content extract now uses a local SQLite cache under `.runtime/content_cache.sqlite` by default
 - cache path and entry cap can now be tuned with `CONTENT_CACHE_DB_PATH` and `CONTENT_CACHE_MAX_ENTRIES`
 - expired rows are pruned on write and the cache trims least-recently-used rows when it exceeds the local entry cap
+- no additional monitor or diff state store is planned yet; persisted local state stays intentionally narrow until a concrete repeated workflow needs more
 - the full observability contract is not complete yet
 
 ---

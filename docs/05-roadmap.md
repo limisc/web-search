@@ -6,9 +6,9 @@ This roadmap needs to follow the repository as it actually exists now.
 It should not preserve early guesses when code, docs, and operating assumptions have moved.
 
 The current priority order is:
-- finish V1 honestly
-- use V1.5 for lightweight verification and normalization work
-- keep V2 for later routing intelligence and heavier ideas
+- keep V1 honest and small
+- keep V1.5 complete without reopening it for speculative monitor work
+- take the next real implementation work from V2, starting with narrow routing-quality improvements
 
 This repo is a search and extraction layer for agents.
 It is not trying to become a provider-monitoring console or a general upstream-control plane.
@@ -18,9 +18,9 @@ So any provider-health work should stay minimal and in service of routing or err
 
 | Phase | Status | Core goal | Notes |
 | --- | --- | --- | --- |
-| V1 | nearly complete | stable `web_search` and `web_extract` contract plus current provider lanes | only the structured-extract question still needs a clean product decision |
-| V1.5 | next | lightweight verification, normalization, and partial-results foundations | this is the highest-value product step now |
-| V2 | later | smarter routing, ranking, richer synthesis, and broader provider graph | do not pull this forward before V1.5 becomes real |
+| V1 | complete | stable `web_search` and `web_extract` contract plus current provider lanes | structured extract is intentionally kept as a contract-only placeholder until a later provider choice justifies implementation |
+| V1.5 | complete | lightweight verification, normalization, and partial-results foundations | verification, verifier signals, partial-results metadata, and the no-new-state-store decision are now in place |
+| V2 | next | smarter routing, ranking, richer synthesis, and broader provider graph | keep the next step narrow and tied to routing quality, not a monitoring product |
 
 ---
 
@@ -40,7 +40,7 @@ Important reality checks:
 - route-decision metadata is exposed in successful responses
 - route context is now attached to provider-facing HTTP errors
 - a minimal provider live-health snapshot exists only to distinguish configured vs missing-config states
-- structured extract is still disabled until a sane-cost path is chosen
+- structured extract remains intentionally disabled as a contract-only placeholder until a later provider choice justifies a real lane
 
 ## Fresh external signals
 
@@ -79,6 +79,7 @@ How to use it:
 - `Apify` still looks better as an ecosystem escape hatch than as a core near-term lane.
 - `Olostep` remains interesting, but it is still not strong enough to become a near-term roadmap driver.
 - `Jina Reader` is more useful as a transform helper than as a core search or extract lane.
+- SQLite's official guidance still fits this repo's current local-state needs well, but WAL remains same-host and checkpoint-sensitive, which supports keeping persisted state narrowly scoped instead of adding a speculative monitor store now.
 
 ### Recording rule
 
@@ -192,13 +193,26 @@ Goal: improve result quality with lightweight verification and normalization, wi
   - do not build a provider dashboard
   - do not build a separate upstream control plane yet
 
+### Minimal state-store decision
+
+No separate monitor, diff, or scheduler state store is justified yet.
+
+Reasons:
+- the only repeated local persisted state that clearly pays for itself today is the single-URL content cache
+- the product still has no public scheduled watch, diff, or alert workflow
+- SQLite remains a good fit for same-host application storage, and the current local Python `sqlite3` + SQLite setup is enough for the repo's existing cache use
+- if a later repeated watch or diff workflow proves valuable, start with a small SQLite store scoped to that workflow instead of adding a provider-control plane or extra service
+
+This keeps V1.5 honest.
+The current persisted local state stays limited to the content cache until a concrete workflow needs more.
+
 ### V1.5 checklist
 
 - [x] verification levels become real behavior, not just contract placeholders
 - [x] duplicate collapse / canonical URL handling
-- [ ] verifier module with lightweight diversity and agreement signals
+- [x] verifier module with lightweight diversity and agreement signals
 - [x] partial-results semantics become explicit behavior
-- [ ] decide whether any minimal state store is truly needed before adding monitor or diff machinery
+- [x] decide whether any minimal state store is truly needed before adding monitor or diff machinery
 
 ---
 

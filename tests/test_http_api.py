@@ -326,6 +326,60 @@ async def test_web_search_light_verification_dedupes_canonical_urls(app, monkeyp
         "canonicalized_urls": 1,
         "duplicates_removed": 1,
         "source_domains": ["example.com"],
+        "unique_domain_count": 1,
+        "multi_source": False,
+    }
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_web_search_light_verification_reports_agreement_hints(app, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("TAVILY_API_KEY", "test-key")
+    monkeypatch.setenv("TAVILY_BASE_URL", "https://api.tavily.com")
+
+    respx.post("https://api.tavily.com/search").mock(
+        return_value=Response(
+            200,
+            json={
+                "results": [
+                    {
+                        "title": "Install Guide",
+                        "url": "https://docs.example.com/install",
+                        "content": "official",
+                        "score": 0.9,
+                    },
+                    {
+                        "title": "Install Guide",
+                        "url": "https://mirror.example.net/install?ref=partner",
+                        "content": "mirror",
+                        "score": 0.85,
+                    },
+                    {
+                        "title": "Release Notes",
+                        "url": "https://blog.example.org/release-notes",
+                        "content": "blog",
+                        "score": 0.7,
+                    },
+                ],
+            },
+        )
+    )
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://testserver") as client:
+        response = await client.post(
+            "/api/web_search",
+            json={"query": "install guide", "provider": "tavily", "verification_level": "light"},
+        )
+
+    body = response.json()
+    assert response.status_code == 200
+    assert body["meta"]["verification_summary"] == {
+        "canonicalized_urls": 1,
+        "duplicates_removed": 0,
+        "source_domains": ["docs.example.com", "mirror.example.net", "blog.example.org"],
+        "unique_domain_count": 3,
+        "multi_source": True,
+        "agreement_hints": ["Matching titles appeared across 2 domains"],
     }
 
 

@@ -42,7 +42,7 @@ Implemented today:
 - router / planner skeleton
 - successful responses expose `meta.route`, `meta.capability`, and `meta.provider_override_applied`
 - provider-facing HTTP errors can include route context and minimal provider-health snapshots
-- `verification_level="light"` now canonicalizes URLs, removes duplicate search hits that collapse to the same canonical URL, and reports source domains as a lightweight diversity hint
+- `verification_level="light"` now canonicalizes URLs, removes duplicate search hits that collapse to the same canonical URL, reports source domains, and adds lightweight agreement hints when matching titles appear across multiple domains
 - successful fallback search responses can expose `meta.partial_failures`
 - query cache
 - URL content cache with stale-while-revalidate semantics for single-URL content extract
@@ -58,6 +58,9 @@ Not implemented yet:
 - true multi-provider fan-out
 - medium and high verification behavior
 - monitoring pipeline / scheduler integration / alerts
+
+The current plan is to keep persisted local state narrow.
+Beyond the existing single-URL content cache, this repo does not currently justify a separate monitor or diff state store.
 
 So the repository is currently **orchestrator-shaped** with **Tavily + Brave + Exa + NewsAPI search paths** and **Tavily + Exa + Firecrawl extract paths**, while broader routing and verification are still in progress.
 

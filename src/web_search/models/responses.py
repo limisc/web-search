@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Any, Literal, TypedDict
 
 from pydantic import BaseModel, Field, HttpUrl
 
@@ -9,7 +9,16 @@ from web_search.models.routing import ExtractCapability, SearchCapability
 VerificationLevel = Literal["none", "light", "medium", "high"]
 CacheState = Literal["miss", "fresh", "stale"]
 Capability = SearchCapability | ExtractCapability
-VerificationSummary = dict[str, int | list[str]]
+
+
+class VerificationSummary(TypedDict, total=False):
+    canonicalized_urls: int
+    duplicates_removed: int
+    source_domains: list[str]
+    unique_domain_count: int
+    multi_source: bool
+    agreement_hints: list[str]
+    partial_failures: int
 
 
 class Citation(BaseModel):
@@ -83,3 +92,4 @@ class ExtractResponse(BaseModel):
     pages: list[ExtractedPage]
     structured_data: dict[str, Any] | list[Any] | None = None
     meta: ResponseMeta
+

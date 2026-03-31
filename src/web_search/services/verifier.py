@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
+import re
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
-from web_search.models.responses import SearchHit, SearchResponse
 from pydantic import HttpUrl, TypeAdapter
+
+from web_search.models.responses import SearchHit, SearchResponse, VerificationSummary
 
 _HTTP_URL_ADAPTER = TypeAdapter(HttpUrl)
 
@@ -20,12 +21,6 @@ _TRACKING_QUERY_KEYS = {
     "igshid",
     "si",
 }
-
-
-@dataclass(frozen=True)
-class VerificationSummary:
-    canonicalized_urls: int
-    duplicates_removed: int
 
 
 def apply_light_verification(response: SearchResponse) -> SearchResponse:
@@ -46,7 +41,7 @@ def apply_light_verification(response: SearchResponse) -> SearchResponse:
             continue
         seen_urls.add(canonical_url)
         domain = _domain_for(canonical_url)
-        if domain not in seen_domains:
+        if domain and domain not in seen_domains:
             seen_domains.add(domain)
             source_domains.append(domain)
         deduped_results.append(result)
@@ -60,19 +55,18 @@ def apply_light_verification(response: SearchResponse) -> SearchResponse:
         seen_citation_urls.add(canonical_url)
         deduped_citations.append(citation.model_copy(update={"url": _HTTP_URL_ADAPTER.validate_python(canonical_url)}))
 
+    verification_summary = _light_verification_summary(
+        results=deduped_results,
+        source_domains=source_domains,
+        canonicalized_urls=canonicalized_urls,
+        duplicates_removed=duplicates_removed,
+    )
+
     return response.model_copy(
         update={
             "results": deduped_results,
             "citations": deduped_citations,
-            "meta": response.meta.model_copy(
-                update={
-                    "verification_summary": {
-                        "canonicalized_urls": canonicalized_urls,
-                        "duplicates_removed": duplicates_removed,
-                        "source_domains": source_domains,
-                    }
-                }
-            ),
+            "meta": response.meta.model_copy(update={"verification_summary": verification_summary}),
         }
     )
 
@@ -98,6 +92,48 @@ def canonicalize_url(url: str) -> str:
     query_pairs.sort()
     query = urlencode(query_pairs, doseq=True)
     return urlunsplit((scheme, netloc, path, query, ""))
+
+
+def _light_verification_summary(
+    *,
+    results: list[SearchHit],
+    source_domains: list[str],
+    canonicalized_urls: int,
+    duplicates_removed: int,
+) -> VerificationSummary:
+    summary: VerificationSummary = {
+        "canonicalized_urls": canonicalized_urls,
+        "duplicates_removed": duplicates_removed,
+        "source_domains": source_domains,
+        "unique_domain_count": len(source_domains),
+        "multi_source": len(source_domains) > 1,
+    }
+    agreement_hints = _agreement_hints_for(results)
+    if agreement_hints:
+        summary["agreement_hints"] = agreement_hints
+    return summary
+
+
+def _agreement_hints_for(results: list[SearchHit]) -> list[str]:
+    title_domains: dict[str, set[str]] = {}
+    for result in results:
+        normalized_title = _normalize_title(result.title)
+        if not normalized_title:
+            continue
+        domain = _domain_for(str(result.url))
+        if not domain:
+            continue
+        title_domains.setdefault(normalized_title, set()).add(domain)
+
+    max_matching_domains = max((len(domains) for domains in title_domains.values()), default=0)
+    if max_matching_domains <= 1:
+        return []
+    return [f"Matching titles appeared across {max_matching_domains} domains"]
+
+
+def _normalize_title(title: str) -> str:
+    normalized = re.sub(r"[^a-z0-9]+", " ", title.lower())
+    return " ".join(normalized.split())
 
 
 def _should_drop_query_param(key: str) -> bool:

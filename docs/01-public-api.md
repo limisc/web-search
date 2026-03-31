@@ -115,7 +115,7 @@ Unified source-discovery entrypoint.
 - `social` is still a contract lane without a social-specialized provider yet
 - `fresh` now prefers NewsAPI when configured, then falls back to the currently configured general providers
 - `verification_level` is currently a contract field, not proof of full cross-provider verification
-- `verification_level="light"` now performs a small verifier step by canonicalizing URLs, collapsing duplicate search hits that normalize to the same URL, and reporting source domains in `meta.verification_summary`
+- `verification_level="light"` now performs a small verifier step by canonicalizing URLs, collapsing duplicate search hits that normalize to the same URL, reporting source domains in `meta.verification_summary`, and adding lightweight agreement hints when matching titles appear across multiple domains
 - successful fallback responses can now expose `meta.partial_failures` when an earlier provider failed but a later provider still returned usable results
 - `provider` override exists mainly to force an available path during the transition period
 - if a caller overrides `provider` to one that does not implement the requested capability, the service returns `provider_not_supported`
