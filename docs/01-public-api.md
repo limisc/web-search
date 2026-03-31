@@ -154,17 +154,16 @@ Unified known-URL extraction entrypoint.
 - Tavily-backed extract is implemented for `mode="content"`
 - Exa-backed extract is implemented for `mode="content"`
 - Firecrawl-backed extract is implemented for `mode="content"` with `provider="firecrawl"`
-- Firecrawl-backed structured extract is the default `mode="structured"` route and also supports `provider="firecrawl"`
 - content extract requests with `query` or `max_chunks` now prefer Exa when configured, then fall back to Tavily
 - plain `mode="content"` still prefers Tavily, with Exa available as fallback when configured
 - Exa extract currently maps `query` to provider-side highlights and uses those highlights as `chunks`
 - Firecrawl content extract currently uses `/scrape` markdown output and derives chunks locally
-- Firecrawl structured extract currently uses `/scrape` JSON mode per URL and returns result data under `structured_data`
-- providers that do not implement `mode="structured"` now return `provider_not_implemented` instead of silently degrading to content output
+- `mode="structured"` is part of the contract, but no provider implements it right now
+- providers that do not implement `mode="structured"` return `provider_not_implemented`
 
 ### Response notes
 - content mode returns extracted page objects under `pages`
-- structured mode currently returns structured output under `structured_data` and leaves `pages` empty
+- `structured_data` is reserved for future structured extraction support
 
 ### Example
 ```bash

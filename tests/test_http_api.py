@@ -493,111 +493,7 @@ async def test_web_extract_returns_firecrawl_success_when_overridden(app, monkey
 
 
 @pytest.mark.asyncio
-@respx.mock
-async def test_web_extract_routes_structured_extract_to_firecrawl_by_default(app, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("FIRECRAWL_API_KEY", "test-key")
-    monkeypatch.setenv("FIRECRAWL_BASE_URL", "https://api.firecrawl.dev/v2")
-    monkeypatch.setenv("TAVILY_API_KEY", "tavily-key")
-    monkeypatch.setenv("TAVILY_BASE_URL", "https://api.tavily.com")
-
-    respx.post("https://api.firecrawl.dev/v2/scrape").mock(
-        return_value=Response(
-            200,
-            json={
-                "success": True,
-                "data": {
-                    "json": {"company": {"name": "Firecrawl", "supports_sso": True}},
-                    "metadata": {"sourceURL": "https://firecrawl.dev"},
-                },
-            },
-        )
-    )
-
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://testserver") as client:
-        response = await client.post(
-            "/api/web_extract",
-            json={
-                "urls": ["https://firecrawl.dev"],
-                "mode": "structured",
-                "query": "Extract company info",
-                "schema": {
-                    "type": "object",
-                    "properties": {
-                        "company": {
-                            "type": "object",
-                            "properties": {
-                                "name": {"type": "string"},
-                                "supports_sso": {"type": "boolean"}
-                            },
-                            "required": ["name", "supports_sso"]
-                        }
-                    },
-                    "required": ["company"]
-                }
-            },
-        )
-
-    body = response.json()
-    assert response.status_code == 200
-    assert body["provider"] == "firecrawl"
-    assert body["meta"]["route"] == "single"
-    assert body["mode"] == "structured"
-    assert body["structured_data"] == {"company": {"name": "Firecrawl", "supports_sso": True}}
-
-
-@pytest.mark.asyncio
-@respx.mock
-async def test_web_extract_returns_firecrawl_structured_success_when_overridden(app, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("FIRECRAWL_API_KEY", "test-key")
-    monkeypatch.setenv("FIRECRAWL_BASE_URL", "https://api.firecrawl.dev/v2")
-
-    respx.post("https://api.firecrawl.dev/v2/scrape").mock(
-        return_value=Response(
-            200,
-            json={
-                "success": True,
-                "data": {
-                    "json": {"company": {"name": "Firecrawl", "supports_sso": True}},
-                    "metadata": {"sourceURL": "https://firecrawl.dev"},
-                },
-            },
-        )
-    )
-
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://testserver") as client:
-        response = await client.post(
-            "/api/web_extract",
-            json={
-                "urls": ["https://firecrawl.dev"],
-                "provider": "firecrawl",
-                "mode": "structured",
-                "query": "Extract company info",
-                "schema": {
-                    "type": "object",
-                    "properties": {
-                        "company": {
-                            "type": "object",
-                            "properties": {
-                                "name": {"type": "string"},
-                                "supports_sso": {"type": "boolean"}
-                            },
-                            "required": ["name", "supports_sso"]
-                        }
-                    },
-                    "required": ["company"]
-                }
-            },
-        )
-
-    body = response.json()
-    assert response.status_code == 200
-    assert body["provider"] == "firecrawl"
-    assert body["mode"] == "structured"
-    assert body["structured_data"] == {"company": {"name": "Firecrawl", "supports_sso": True}}
-
-
-@pytest.mark.asyncio
-async def test_web_extract_returns_firecrawl_not_configured_for_default_structured_route(app, monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_web_extract_rejects_structured_extract_by_default(app, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("FIRECRAWL_API_KEY", "")
     monkeypatch.setenv("FIRECRAWL_BASE_URL", "https://api.firecrawl.dev/v2")
     monkeypatch.setenv("TAVILY_API_KEY", "tavily-key")
@@ -607,24 +503,24 @@ async def test_web_extract_returns_firecrawl_not_configured_for_default_structur
         response = await client.post(
             "/api/web_extract",
             json={
-                "urls": ["https://example.com/firecrawl-page"],
+                "urls": ["https://firecrawl.dev"],
                 "mode": "structured",
-                "query": "Extract fields"
+                "query": "Extract company info",
             },
         )
 
-    assert response.status_code == 503
+    assert response.status_code == 501
     assert response.json() == {
         "error": {
-            "type": "provider_not_configured",
-            "message": "FIRECRAWL_API_KEY is not configured",
+            "type": "provider_not_implemented",
+            "message": "Provider not implemented yet: firecrawl structured extract",
             "provider": "firecrawl",
         }
     }
 
 
 @pytest.mark.asyncio
-async def test_web_extract_rejects_firecrawl_structured_without_schema_or_query(app, monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_web_extract_rejects_firecrawl_structured_override(app, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("FIRECRAWL_API_KEY", "test-key")
     monkeypatch.setenv("FIRECRAWL_BASE_URL", "https://api.firecrawl.dev/v2")
 
@@ -632,17 +528,18 @@ async def test_web_extract_rejects_firecrawl_structured_without_schema_or_query(
         response = await client.post(
             "/api/web_extract",
             json={
-                "urls": ["https://example.com/firecrawl-page"],
+                "urls": ["https://firecrawl.dev"],
                 "provider": "firecrawl",
                 "mode": "structured",
+                "query": "Extract company info",
             },
         )
 
-    assert response.status_code == 400
+    assert response.status_code == 501
     assert response.json() == {
         "error": {
-            "type": "invalid_request",
-            "message": "Structured extract requires a schema or query",
+            "type": "provider_not_implemented",
+            "message": "Provider not implemented yet: firecrawl structured extract",
             "provider": "firecrawl",
         }
     }

@@ -30,9 +30,14 @@ class FirecrawlProvider:
         )
 
     async def extract(self, request: ExtractRequest) -> ExtractResponse:
+        if request.mode != "content":
+            raise ProviderError(
+                "Provider not implemented yet: firecrawl structured extract",
+                provider=self.name,
+                error_type="provider_not_implemented",
+                details={"mode": request.mode},
+            )
         self._ensure_configured()
-        if request.mode == "structured":
-            return await self._extract_structured(request)
         return await self._extract_content(request)
 
     async def _extract_content(self, request: ExtractRequest) -> ExtractResponse:
@@ -67,59 +72,6 @@ class FirecrawlProvider:
             provider=self.name,
             mode=request.mode,
             pages=pages,
-            meta=ResponseMeta(latency_ms=latency_ms, providers_used=[self.name]),
-        )
-
-    async def _extract_structured(self, request: ExtractRequest) -> ExtractResponse:
-        if request.extraction_schema is None and request.query is None:
-            raise ProviderError(
-                "Structured extract requires a schema or query",
-                provider=self.name,
-                error_type="invalid_request",
-            )
-
-        started = time.perf_counter()
-        structured_items: list[dict[str, Any]] = []
-        for url in request.urls:
-            url_str = str(url)
-            data = await self._request("POST", "/scrape", json_body=self._structured_scrape_body_for(url_str, request))
-            item = self._extract_page(data)
-            if item is None:
-                continue
-            structured_value = self._structured_value_for(item)
-            if structured_value is None:
-                raise ProviderError(
-                    "Firecrawl scrape completed without structured data",
-                    provider=self.name,
-                    error_type="provider_unavailable",
-                    details={"url": url_str, "response": data},
-                )
-            if len(request.urls) == 1:
-                structured_items.append({"data": structured_value})
-            else:
-                structured_items.append({"url": self._page_url_for(item, url_str), "data": structured_value})
-
-        if not structured_items:
-            raise ProviderError(
-                "Firecrawl scrape completed without structured data",
-                provider=self.name,
-                error_type="provider_unavailable",
-                details={"urls": [str(url) for url in request.urls]},
-            )
-
-        structured_data: dict[str, Any] | list[Any]
-        if len(request.urls) == 1:
-            structured_data = structured_items[0]["data"]
-        else:
-            structured_data = structured_items
-
-        latency_ms = int((time.perf_counter() - started) * 1000)
-        self.logger.info("provider_extract_finished provider=%s latency_ms=%s page_count=0", self.name, latency_ms)
-        return ExtractResponse(
-            provider=self.name,
-            mode=request.mode,
-            pages=[],
-            structured_data=structured_data,
             meta=ResponseMeta(latency_ms=latency_ms, providers_used=[self.name]),
         )
 
@@ -229,31 +181,10 @@ class FirecrawlProvider:
         return body
 
     @staticmethod
-    def _structured_scrape_body_for(url: str, request: ExtractRequest) -> dict[str, Any]:
-        structured_format: dict[str, Any] = {"type": "json"}
-        if request.extraction_schema is not None:
-            structured_format["schema"] = request.extraction_schema
-        if request.query is not None:
-            structured_format["prompt"] = request.query
-        body: dict[str, Any] = {
-            "url": url,
-            "formats": [structured_format],
-            "onlyMainContent": True,
-        }
-        return body
-
-    @staticmethod
     def _extract_page(data: dict[str, Any]) -> dict[str, Any] | None:
         payload = data.get("data")
         if isinstance(payload, dict):
             return payload
-        return None
-
-    @staticmethod
-    def _structured_value_for(item: dict[str, Any]) -> dict[str, Any] | list[Any] | None:
-        structured_value = item.get("json")
-        if isinstance(structured_value, (dict, list)):
-            return structured_value
         return None
 
     @staticmethod

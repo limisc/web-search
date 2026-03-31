@@ -36,7 +36,6 @@ Implemented today:
 - Exa-backed web search
 - Exa-backed content extract
 - Firecrawl-backed content extract with provider override
-- Firecrawl-backed structured extract
 - thin MCP facade
 - HTTP APIs
 - router / planner skeleton
@@ -44,6 +43,7 @@ Implemented today:
 
 Not implemented yet:
 - Firecrawl-backed search
+- Firecrawl-backed structured extract
 - default-routed Firecrawl content extract lane
 - Grok adapters
 - true multi-provider fan-out
