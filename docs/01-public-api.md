@@ -116,6 +116,7 @@ Unified source-discovery entrypoint.
 - `fresh` now prefers NewsAPI when configured, then falls back to the currently configured general providers
 - `verification_level` is currently a contract field, not proof of real cross-provider verification
 - `provider` override exists mainly to force an available path during the transition period
+- if a caller overrides `provider` to one that does not implement the requested capability, the service returns `provider_not_supported`
 
 ### Example
 
@@ -168,6 +169,7 @@ Unified known-URL extraction entrypoint.
 - Tavily-backed extract is implemented for `mode="content"`
 - Exa-backed extract is implemented for `mode="content"`
 - Firecrawl-backed extract is implemented for `mode="content"` with `provider="firecrawl"`
+- the current provider capability matrix is explicit now: Tavily=`broad_search + content_extract`, Brave=`broad_search`, Exa=`authoritative_search + broad_search + content_extract`, NewsAPI=`fresh_search`, Firecrawl=`content_extract`
 - content extract requests with `query` or `max_chunks` now prefer Exa when configured, then fall back to Tavily
 - plain `mode="content"` still prefers Tavily, with Exa available as fallback when configured
 - single-URL `mode="content"` requests now use a local SQLite URL content cache with stale-while-revalidate behavior when `debug=false`

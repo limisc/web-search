@@ -22,8 +22,8 @@ At the moment:
 - Brave-backed web search is implemented
 - Exa-backed web search is implemented
 - NewsAPI-backed fresh/news search is implemented
-- multi-provider routing semantics are still mostly design-time abstractions
-- provider tables below are planning aids unless explicitly marked as implemented
+- the current provider capability matrix below is the live implementation truth for existing providers
+- multi-provider routing semantics beyond the current lanes are still mostly design-time abstractions
 
 ---
 
@@ -108,16 +108,16 @@ This table defines semantic lanes, not current implementation guarantees.
 
 ---
 
-## Example future provider-to-capability mapping
+## Example current provider-to-capability mapping
 
-| Provider  | Capabilities                                              | Current status                                                                            |
-| --------- | --------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| Exa       | `authoritative_search`, `broad_search`, `content_extract` | implemented for web search and content extract                                            |
-| Tavily    | `broad_search`, `content_extract`                         | implemented                                                                               |
-| Brave     | `broad_search`                                            | implemented for web search                                                                |
-| NewsAPI   | `fresh_search`                                            | implemented for fresh/news search                                                         |
-| Firecrawl | `content_extract`, `structured_extract`                   | content extract is implemented by provider override; structured extract is still disabled |
-| Grok      | `fresh_search`, `social_search`                           | planned                                                                                   |
+| Provider  | Capabilities                                              | Current status                                 |
+| --------- | --------------------------------------------------------- | ---------------------------------------------- |
+| Exa       | `authoritative_search`, `broad_search`, `content_extract` | implemented for web search and content extract |
+| Tavily    | `broad_search`, `content_extract`                         | implemented                                    |
+| Brave     | `broad_search`                                            | implemented for web search                     |
+| NewsAPI   | `fresh_search`                                            | implemented for fresh/news search              |
+| Firecrawl | `content_extract`                                         | implemented for content extract                |
+| Grok      | `fresh_search`, `social_search`                           | planned                                        |
 
 ---
 
@@ -138,6 +138,7 @@ Current extract behavior is more limited:
 - plain `mode="content"` still prefers Tavily, with Exa available as fallback when configured
 - single-URL `mode="content"` requests now reuse a local URL content cache before hitting upstream extract providers
 - `provider="firecrawl"` supports content extract today
+- overriding `provider` to a service that does not implement extract returns `provider_not_supported`
 - default `mode="structured"` returns `provider_not_implemented`
 - no provider currently implements `mode="structured"`
 

@@ -45,6 +45,7 @@ Implemented today:
 - extract responses expose `meta.cache_state` as `miss | fresh | stale` when the local URL content cache is used
 - cache path and entry cap are configurable through `CONTENT_CACHE_DB_PATH` and `CONTENT_CACHE_MAX_ENTRIES`
 - expired cache rows are pruned on write and oversized caches trim least-recently-used rows
+- provider capability support is explicit now: Tavily=`broad_search + content_extract`, Brave=`broad_search`, Exa=`authoritative_search + broad_search + content_extract`, NewsAPI=`fresh_search`, Firecrawl=`content_extract`
 
 Not implemented yet:
 - Firecrawl-backed structured extract
