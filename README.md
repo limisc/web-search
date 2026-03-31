@@ -98,6 +98,8 @@ uv run python -m web_search.app --transport stdio
 
 This starts the service in the background and keeps runtime state under `.runtime/` inside the checkout instead of scattering logs, pid files, and uv temp locks into `/tmp`.
 
+The default runtime now tells Uvicorn to use `wsproto` for WebSocket handling so startup stays quiet with current `websockets` releases.
+
 Direct foreground run still works when needed:
 ```bash
 uv run python -m web_search.app --transport http --host 127.0.0.1 --port 8000 --path /mcp

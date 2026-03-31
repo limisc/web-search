@@ -45,6 +45,9 @@ Current status:
 
 The current system already has timeout and retry configuration hooks.
 
+Current runtime note:
+- local startup uses Uvicorn with `UVICORN_WS_PROTOCOL=wsproto` by default to avoid the deprecated `websockets.legacy` path on current dependency versions
+
 Operationally, the service should continue to move toward:
 - explicit upstream timeout behavior
 - retry only for transient failures

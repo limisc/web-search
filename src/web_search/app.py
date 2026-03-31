@@ -35,7 +35,7 @@ def main() -> None:
         return
 
     app = build_http_app(path=path, stateless_http=settings.fastmcp_stateless_http)
-    uvicorn.run(app, host=host, port=port)
+    uvicorn.run(app, host=host, port=port, ws=settings.uvicorn_ws_protocol)
 
 
 if __name__ == "__main__":

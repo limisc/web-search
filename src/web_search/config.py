@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     mcp_port: int = Field(default=8000, alias="MCP_PORT")
     mcp_path: str = Field(default="/mcp", alias="MCP_PATH")
     fastmcp_stateless_http: bool = Field(default=True, alias="FASTMCP_STATELESS_HTTP")
+    uvicorn_ws_protocol: str = Field(default="wsproto", alias="UVICORN_WS_PROTOCOL")
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 

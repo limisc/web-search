@@ -76,6 +76,8 @@ uv sync --extra dev
 ./scripts/local_service.sh start live
 ```
 
+The default `.env.example` now pins `UVICORN_WS_PROTOCOL=wsproto` so local startup avoids the deprecated `websockets.legacy` import path.
+
 That keeps service logs, pid files, and temp files under `../web-search-live/.runtime/` instead of `/tmp`.
 
 Check status or stop it with:
