@@ -33,10 +33,10 @@ class NewsApiProvider:
             )
 
         started = time.perf_counter()
-        params = self._everything_params_for(request)
+        path, params = self._request_spec_for(request)
 
         self.logger.info("provider_search_started provider=%s query=%s", self.name, request.query)
-        data = await self._get("/everything", params)
+        data = await self._get(path, params)
         latency_ms = int((time.perf_counter() - started) * 1000)
 
         results = [
@@ -185,6 +185,11 @@ class NewsApiProvider:
                 error_type="provider_not_configured",
             )
 
+    def _request_spec_for(self, request: SearchRequest) -> tuple[str, dict[str, Any]]:
+        if request.intent == "fresh" and self._can_use_top_headlines(request):
+            return "/top-headlines", self._top_headlines_params_for(request)
+        return "/everything", self._everything_params_for(request)
+
     def _everything_params_for(self, request: SearchRequest) -> dict[str, Any]:
         params: dict[str, Any] = {
             "q": request.query,
@@ -202,6 +207,19 @@ class NewsApiProvider:
         start_published_at = self._start_published_at_for(request)
         if start_published_at:
             params["from"] = start_published_at
+        return params
+
+    @staticmethod
+    def _can_use_top_headlines(request: SearchRequest) -> bool:
+        return bool(request.preferences.country and not request.include_domains and not request.exclude_domains and request.freshness is None)
+
+    def _top_headlines_params_for(self, request: SearchRequest) -> dict[str, Any]:
+        params: dict[str, Any] = {
+            "country": request.preferences.country,
+            "q": request.query,
+            "pageSize": request.max_results,
+            "page": 1,
+        }
         return params
 
     @staticmethod

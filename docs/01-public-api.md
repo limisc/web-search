@@ -102,7 +102,7 @@ Unified source-discovery entrypoint.
 - for `intent=docs`, the Exa adapter currently adds an official-documentation hint to the query text to improve canonical-source ranking
 - `include_domains` and `exclude_domains` are currently applied to Brave through search operators inside the query string
 - Brave web search automatically switches to POST for multi-goggle or long-query requests, following the official POST request-body support
-- `provider_options.brave` requires `provider="brave"`
+- NewsAPI fresh search currently maps `preferences.country` to `/top-headlines` when possible, and otherwise maps `preferences.search_lang`, `freshness`, and domain filters to `/everything`
 - `docs` now prefers Exa when configured, then falls back to Brave or Tavily
 - `social` is still a contract lane without a social-specialized provider yet
 - `fresh` now prefers NewsAPI when configured, then falls back to the currently configured general providers

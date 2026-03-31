@@ -118,6 +118,11 @@ class SearchRequest(BaseModel):
 
     @model_validator(mode="after")
     def normalize_search_request(self) -> "SearchRequest":
+        normalized_query = self.query.strip()
+        if not normalized_query:
+            raise ValueError("query must not be blank")
+        self.query = normalized_query
+
         merged: list[str] = []
         seen: set[str] = set()
         for domain in [*self.domains, *self.include_domains]:
@@ -125,12 +130,20 @@ class SearchRequest(BaseModel):
             if normalized and normalized not in seen:
                 merged.append(normalized)
                 seen.add(normalized)
+        self.domains = []
         self.include_domains = merged
-        self.exclude_domains = [domain.strip().lower() for domain in self.exclude_domains if domain.strip()]
+
+        normalized_exclude_domains: list[str] = []
+        seen_exclude_domains: set[str] = set()
+        for domain in self.exclude_domains:
+            normalized = domain.strip().lower()
+            if normalized and normalized not in seen_exclude_domains:
+                normalized_exclude_domains.append(normalized)
+                seen_exclude_domains.add(normalized)
+        self.exclude_domains = normalized_exclude_domains
 
         if self.freshness == "any":
             self.freshness = None
-        self.query = self.query.strip()
 
         if self.provider_options.brave and self.provider_options.brave.goggles and self.provider != "brave":
             raise ValueError("provider_options.brave requires provider='brave'")
@@ -178,5 +191,8 @@ class ExtractRequest(BaseModel):
 
     @model_validator(mode="after")
     def normalize_query(self) -> "ExtractRequest":
-        self.query = self.query.strip() if self.query else None
+        if self.query is None:
+            return self
+        normalized_query = self.query.strip()
+        self.query = normalized_query or None
         return self

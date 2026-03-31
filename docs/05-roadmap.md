@@ -4,7 +4,7 @@
 
 | Phase | Status | Core goal | Notes |
 |---|---|---|---|
-| V1 | in progress | unified interfaces + thin MCP + HTTP APIs + orchestrator skeleton | code already moved here, with Tavily plus Brave plus Exa execution in place |
+| V1 | in progress | unified interfaces + thin MCP + HTTP APIs + orchestrator skeleton | code already moved here, with Tavily plus Brave plus Exa plus NewsAPI execution in place |
 | V1.5 | planned | verification + future monitoring building blocks | depends on basic multi-provider capabilities landing first |
 | V2 | planned | intelligent routing, ranking, cost-awareness, health-awareness | after V1.5 stabilizes |
 
@@ -38,7 +38,7 @@ Goal: stabilize the public contract, HTTP API, MCP thin facade, and router/plann
   - unified `web_extract` schema
 - provider layer
   - keep `tavily` working
-  - reserve adapter slots for `exa`, `brave`, `firecrawl`, `grok`
+  - reserve adapter slots for `exa`, `brave`, `newsapi`, `firecrawl`, `grok`
 - orchestration layer
   - rule-based router
   - planner modes

@@ -103,9 +103,37 @@ async def test_newsapi_search_maps_supported_params(monkeypatch: pytest.MonkeyPa
     assert isinstance(captured["from"], str)
 
 
+
+
 @pytest.mark.asyncio
 @respx.mock
-async def test_newsapi_search_maps_api_key_exhausted_to_budget_exceeded(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_newsapi_search_uses_top_headlines_for_country_fresh_queries(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("NEWSAPI_API_KEY", "test-key")
+    monkeypatch.setenv("NEWSAPI_BASE_URL", "https://newsapi.org/v2")
+
+    captured: dict[str, object] = {}
+
+    def handler(request: Request) -> Response:
+        captured["path"] = request.url.path
+        captured["country"] = request.url.params.get("country")
+        captured["q"] = request.url.params.get("q")
+        return Response(200, json={"status": "ok", "totalResults": 0, "articles": []})
+
+    respx.get("https://newsapi.org/v2/top-headlines").mock(side_effect=handler)
+
+    provider = NewsApiProvider()
+    await provider.search(
+        SearchRequest(
+            query="latest startup funding",
+            intent="fresh",
+            preferences={"country": "us"},
+            max_results=3,
+        )
+    )
+
+    assert captured["path"] == "/v2/top-headlines"
+    assert captured["country"] == "US"
+    assert captured["q"] == "latest startup funding"
     monkeypatch.setenv("NEWSAPI_API_KEY", "test-key")
     monkeypatch.setenv("NEWSAPI_BASE_URL", "https://newsapi.org/v2")
 

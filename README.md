@@ -51,7 +51,7 @@ Not implemented yet:
 - true verification / agreement scoring
 - monitoring pipeline / scheduler integration / alerts
 
-So the repository is currently **orchestrator-shaped** with **Tavily + Brave + Exa search paths** and **Tavily + Exa + Firecrawl extract paths**, while broader routing and verification are still in progress.
+So the repository is currently **orchestrator-shaped** with **Tavily + Brave + Exa + NewsAPI search paths** and **Tavily + Exa + Firecrawl extract paths**, while broader routing and verification are still in progress.
 
 ---
 
