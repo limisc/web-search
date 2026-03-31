@@ -163,6 +163,56 @@ Goal: evolve from a purely rule-based orchestrator into one with cost-awareness,
 
 ---
 
+## External watchlist
+
+These are not in the project yet.
+They are being tracked because they may strengthen search, structured extraction, browser automation, or adjacent extraction lanes.
+
+### High-priority watchlist
+
+| Provider | Primary lane | Free tier signal | Why watch it |
+| --- | --- | --- | --- |
+| Diffbot | structured extract | free forever with 10,000 extract calls / credits per month on the free plan, based on pricing and rate-limit docs | strongest external structured extraction candidate with meaningful monthly reset capacity |
+| SerpApi | Google / SERP search | official pricing and account docs indicate a small recurring monthly free allowance, with current external evidence pointing to roughly 100 to 250 free searches per month | strongest external Google SERP candidate and a likely search-lane supplement |
+| Olostep | AI-first scrape / extract / search | public pages indicate a recurring free monthly scrape allowance, but current public wording is inconsistent between 500 and 3,000 successful scrapes | promising AI-oriented web data platform with low paid entry and multiple relevant lanes |
+| BrowserCat | browser automation | free plan exists, but the current public pages we checked do not state the monthly free credit number clearly enough yet | best browser-lane candidate for JS-heavy pages, login flows, and future interaction support |
+| Apify | actor marketplace / niche extraction | free plan includes recurring monthly platform credits, commonly referenced as $5 per month | useful ecosystem option for niche or vertical extractors without committing to one core provider |
+
+### Secondary watchlist
+
+| Provider | Primary lane | Free tier signal | Why watch it |
+| --- | --- | --- | --- |
+| Jina Reader | content transform / reader lane | basic usage is free and public materials reference free token buckets for new keys, but the exact long-term free allowance wording is inconsistent across pages | worth watching as a content-to-markdown / JSON transform layer rather than a traditional scraper |
+| Serper | Google / SERP search | 2,500 free queries are publicly advertised, but the current public evidence does not cleanly prove a recurring monthly reset | cheap Google SERP option, but the long-term free-tier shape is less clear than SerpApi |
+| SearchApi.io | Google / SERP search | 100 free requests are publicly advertised, but the monthly reset story is weak | useful feature coverage, but the free tier is small and less compelling |
+| Parseur | document extraction | 20 pages per month free forever | mostly relevant if the project expands beyond websites into documents or email parsing |
+| Monkt | HTML-to-JSON transform | free plan signals exist, but public pricing details are still too weak to rely on | keep on the radar, but do not prioritize without clearer official pricing and capability docs |
+
+### Watchlist rules
+
+- prefer recurring monthly reset free tiers over one-time trial credits when choosing what to monitor closely
+- do not treat this table as an integration commitment
+- before any implementation decision, re-check the provider's official pricing, rate limits, and API shape because these products change quickly
+
+## Future GitHub discovery and repo-reading lane
+
+A missing capability in the current project is GitHub repository discovery plus repository digestion.
+This matters because programming-related discovery often depends on GitHub more than websites alone.
+
+Potential future workflow:
+
+1. discover candidate repositories from broad web or GitHub-aware search
+2. separate primary repos from wrappers, forks, integrations, and stale clones
+3. digest the repo itself
+   - README and examples
+   - package and directory layout
+   - release and maintenance signals
+   - issues, discussions, and activity hints
+4. feed that back into provider and tool evaluation
+
+This is not a public API yet.
+For now it should be treated as a research workflow or future capability area, not a committed surface.
+
 ## Relationship to other docs
 
 Read next:
