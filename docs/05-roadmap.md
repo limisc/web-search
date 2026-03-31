@@ -127,6 +127,17 @@ Goal: stabilize the public contract, HTTP API, MCP thin facade, and current prov
 - future extraction fan-out must stay limited to a small top-N set
 - `debug=false` by default
 
+### Structured extract decision
+
+For now, `web_extract(mode="structured")` remains part of the public contract, but it is explicitly a contract-only placeholder.
+It is not an active V1 implementation target.
+The current runtime should keep returning `provider_not_implemented` for structured requests until a later batch chooses one sane-cost path worth implementing.
+
+Current reasons:
+- Firecrawl does offer structured extraction paths, but the current `/extract` positioning is still changing and billing remains variable enough that it is not a good V1 default lane yet.
+- Diffbot remains the strongest structured-extract watch candidate, but it is still a separate later-provider decision, not a reason to stretch V1.
+- shipping a weak structured lane just to close a checklist item would make the contract noisier and the roadmap less honest.
+
 ### V1 checklist
 
 - [x] unified `web_search` schema
@@ -144,7 +155,7 @@ Goal: stabilize the public contract, HTTP API, MCP thin facade, and current prov
 - [x] provider capability matrix finalized
 - [x] HTTP API integration tests
 - [x] URL content cache
-- [ ] decide whether `structured_extract` stays as a contract-only placeholder for now or moves to a later phase explicitly
+- [x] structured extract explicitly kept as contract-only placeholder until a later provider decision justifies implementation
 
 ### V1 Definition of Done
 

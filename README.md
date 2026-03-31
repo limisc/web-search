@@ -52,7 +52,7 @@ Implemented today:
 - provider capability support is explicit now: Tavily=`broad_search + content_extract`, Brave=`broad_search`, Exa=`authoritative_search + broad_search + content_extract`, NewsAPI=`fresh_search`, Firecrawl=`content_extract`
 
 Not implemented yet:
-- Firecrawl-backed structured extract
+- structured extract execution
 - default-routed Firecrawl content extract lane
 - Grok adapters
 - true multi-provider fan-out
@@ -131,6 +131,18 @@ uv run ruff check .
 ### 8. Run type check
 ```bash
 uv run pyright
+```
+
+### 9. Promote the validated batch to live
+```bash
+./scripts/promote_live.sh
+```
+
+This updates `../web-search-live` to the chosen validated commit, runs `uv sync --extra dev` there, and restarts the stable local service.
+
+You can also promote a specific commit:
+```bash
+./scripts/promote_live.sh <commitish>
 ```
 
 ---

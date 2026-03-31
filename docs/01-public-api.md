@@ -180,6 +180,7 @@ Unified known-URL extraction entrypoint.
 - Exa extract currently maps `query` to provider-side highlights and uses those highlights as `chunks`
 - Firecrawl content extract currently uses `/scrape` markdown output and derives chunks locally
 - `mode="structured"` is part of the contract, but no provider implements it right now
+- structured extract is intentionally kept as a contract-only placeholder for now, not an active V1 execution target
 - default structured requests currently return `provider_not_implemented`
 - providers that do not implement `mode="structured"` return `provider_not_implemented`
 
