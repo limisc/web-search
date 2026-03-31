@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from web_search.models.responses import SearchResponse
+from web_search.models.responses import Citation, ResponseMeta, SearchHit, SearchResponse
 from web_search.services.verifier import apply_light_verification, canonicalize_url
 
 
@@ -9,29 +9,31 @@ def test_canonicalize_url_drops_tracking_and_normalizes_shape() -> None:
 
 
 def test_apply_light_verification_dedupes_results_and_citations() -> None:
-    response = SearchResponse.model_validate(
-        {
-            "query": "mcp",
-            "intent": "general",
-            "provider": "tavily",
-            "results": [
+    response = SearchResponse(
+        query="mcp",
+        intent="general",
+        provider="tavily",
+        results=[
+            SearchHit.model_validate(
                 {
                     "title": "A",
                     "url": "https://example.com/docs/?utm_source=test",
                     "provider": "tavily",
-                },
+                }
+            ),
+            SearchHit.model_validate(
                 {
                     "title": "B",
                     "url": "https://example.com/docs",
                     "provider": "tavily",
-                },
-            ],
-            "citations": [
-                {"title": "A", "url": "https://example.com/docs/?ref=abc", "provider": "tavily"},
-                {"title": "B", "url": "https://example.com/docs", "provider": "tavily"},
-            ],
-            "meta": {"latency_ms": 10, "verification_level": "light"},
-        }
+                }
+            ),
+        ],
+        citations=[
+            Citation.model_validate({"title": "A", "url": "https://example.com/docs/?ref=abc", "provider": "tavily"}),
+            Citation.model_validate({"title": "B", "url": "https://example.com/docs", "provider": "tavily"}),
+        ],
+        meta=ResponseMeta(latency_ms=10, verification_level="light"),
     )
 
     verified = apply_light_verification(response)
